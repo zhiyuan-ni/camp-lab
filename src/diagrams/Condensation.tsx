@@ -64,11 +64,11 @@ export const Condensation: React.FC<DiagramProps> = ({ activeStep, progress, fra
       {fall > 0 && <circle cx={330} cy={200 + fall * 240} r={7} fill={c.cool} opacity={1 - fall * 0.3} />}
       {/* 温度标签 */}
       <g fontFamily={brand.font} fontWeight={700}>
-        <text x={600} y={150} fill={c.cool} fontSize={30}>外部 2°C</text>
-        <text x={330} y={360} fill={c.warm} fontSize={28}>帐内 12°C</text>
+        <text x={600} y={150} fill={c.cool} fontSize={30}>Outside 2°C</text>
+        <text x={400} y={360} fill={c.warm} fontSize={28} textAnchor="middle">Inside 12°C</text>
         <g opacity={dewLabel}>
-          <rect x={470} y={215} width={170} height={46} rx={10} fill={c.cool} />
-          <text x={555} y={248} fill={c.bg} fontSize={26} textAnchor="middle">低于露点</text>
+          <rect x={450} y={215} width={230} height={46} rx={10} fill={c.cool} />
+          <text x={565} y={248} fill={c.bg} fontSize={26} textAnchor="middle">Below dew point</text>
         </g>
       </g>
     </svg>

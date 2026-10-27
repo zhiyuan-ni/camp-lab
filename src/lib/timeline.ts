@@ -1,7 +1,9 @@
 import type { Alignment, Episode, Segment, Voiceover } from "./schema";
 
-/** 没有配音时，按中文语速估算时长（字/秒） */
-export const CHARS_PER_SECOND = 4.2;
+/** 没有配音时，按英文语速估算时长（约 150 词/分钟） */
+export const WORDS_PER_SECOND = 2.5;
+/** 每个句末或逗号停顿额外加的秒数 */
+const PAUSE_SECONDS = 0.15;
 /** 每段开始前的留白，让画面先出现再开口 */
 export const LEAD_IN = 0.3;
 export const DEFAULT_PAD_AFTER = 0.5;
@@ -27,9 +29,11 @@ export type TimedSegment = {
 
 export type Timeline = { segments: TimedSegment[]; durationInFrames: number; hasAudio: boolean };
 
+export const countWords = (text: string) => text.split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length;
+
 export const estimateSeconds = (text: string) => {
-  const chars = [...text.replace(/\s/g, "")].length;
-  return Math.max(1, chars / CHARS_PER_SECOND);
+  const pauses = (text.match(/[,.;:!?—]/g) ?? []).length;
+  return Math.max(1, countWords(text) / WORDS_PER_SECOND + pauses * PAUSE_SECONDS);
 };
 
 export const buildTimeline = (episode: Episode, voiceover: Voiceover | null, fps: number): Timeline => {
@@ -57,53 +61,71 @@ export const buildTimeline = (episode: Episode, voiceover: Voiceover | null, fps
   return { segments, durationInFrames: Math.max(cursor, 1), hasAudio };
 };
 
-const BREAK = /[，。！？；：、,.!?;:]/;
-const MAX_LINE = 16;
+/** 每行字幕最多几个词 */
+export const MAX_WORDS_PER_LINE = 6;
+const SENTENCE_END = /[.!?…]["”’)]*$/;
+const CLAUSE_END = /[,;:—]["”’)]*$/;
 
 /**
- * 把旁白切成字幕行：先按标点切成短句，再把短句拼成不超过 MAX_LINE 字的行，
- * 过长的单句硬切。有 ElevenLabs 字符时间戳时用真实时间，否则按字数比例分配。
+ * 把旁白切成字幕行：按词切，每行不超过 MAX_WORDS_PER_LINE 个词；
+ * 句末必换行，逗号处在行里已有 3 个词以上时换行，避免只剩一个词的孤行。
+ * 有 ElevenLabs 字符时间戳时用真实时间，否则按字符数比例分配。
  */
 export const buildCaptions = (text: string, duration: number, alignment?: Alignment): Caption[] => {
-  const chars = [...text];
-  const visibleLen = (a: number, b: number) =>
-    chars.slice(a, b).filter((c) => !/[\s，。！？；：、,.!?;:“”"]/.test(c)).length;
+  const words = [...text.matchAll(/\S+/g)].map((m) => ({ word: m[0], start: m.index!, end: m.index! + m[0].length }));
+  if (words.length === 0) return [];
 
-  // 1) 按标点切短句（标点留在句尾）
-  const clauses: { start: number; end: number }[] = [];
-  let start = 0;
-  chars.forEach((c, i) => {
-    if (BREAK.test(c) || i === chars.length - 1) {
-      // 2) 单句过长则硬切
-      for (let s = start; s <= i; s += MAX_LINE) clauses.push({ start: s, end: Math.min(s + MAX_LINE, i + 1) });
-      start = i + 1;
+  type Word = (typeof words)[number];
+  // 1) 按标点切成短句；句末标记为必须换行
+  const clauses: { words: Word[]; sentenceEnd: boolean }[] = [];
+  let current: Word[] = [];
+  words.forEach((w, i) => {
+    current.push(w);
+    const sentenceEnd = SENTENCE_END.test(w.word);
+    if (sentenceEnd || CLAUSE_END.test(w.word) || i === words.length - 1) {
+      clauses.push({ words: current, sentenceEnd });
+      current = [];
     }
   });
 
-  // 3) 把相邻短句拼成一行；句号/问号/感叹号处强制换行
-  const merged: typeof clauses = [];
-  for (const c of clauses) {
-    const prev = merged[merged.length - 1];
-    const prevEndsSentence = prev && /[。！？!?]/.test(chars[prev.end - 1]);
-    if (prev && !prevEndsSentence && visibleLen(prev.start, c.end) <= MAX_LINE) prev.end = c.end;
-    else merged.push({ ...c });
-  }
+  // 2) 过长的短句均匀切开（7 个词 → 4 + 3，而不是 6 + 1）
+  const chunks = clauses.flatMap((c) => {
+    const n = Math.ceil(c.words.length / MAX_WORDS_PER_LINE);
+    const size = Math.ceil(c.words.length / n);
+    return Array.from({ length: n }, (_, k) => ({
+      words: c.words.slice(k * size, (k + 1) * size),
+      sentenceEnd: c.sentenceEnd && k === n - 1,
+    }));
+  });
 
+  // 3) 同一句里相邻的短块拼成一行，不超过上限
+  const lines: Word[][] = [];
+  let open: { words: Word[]; sentenceEnd: boolean } | null = null;
+  for (const c of chunks) {
+    if (open && !open.sentenceEnd && open.words.length + c.words.length <= MAX_WORDS_PER_LINE) {
+      open.words.push(...c.words);
+      open.sentenceEnd = c.sentenceEnd;
+    } else {
+      if (open) lines.push(open.words);
+      open = { words: [...c.words], sentenceEnd: c.sentenceEnd };
+    }
+  }
+  if (open) lines.push(open.words);
+
+  const useAlignment = alignment && alignment.characters.join("") === text;
+  const nonSpaceBefore = (index: number) => text.slice(0, index).replace(/\s/g, "").length;
+  const totalNonSpace = Math.max(nonSpaceBefore(text.length), 1);
   const timeAt = (index: number, edge: "start" | "end"): number => {
-    if (alignment && alignment.characters.length === chars.length) {
+    if (useAlignment) {
       const arr = edge === "start" ? alignment.character_start_times_seconds : alignment.character_end_times_seconds;
       return arr[Math.min(Math.max(index, 0), arr.length - 1)];
     }
-    const visible = (n: number) => chars.slice(0, n).filter((c) => !/\s/.test(c)).length;
-    const total = Math.max(visible(chars.length), 1);
-    return (visible(edge === "start" ? index : index + 1) / total) * duration;
+    return (nonSpaceBefore(edge === "start" ? index : index + 1) / totalNonSpace) * duration;
   };
 
-  return merged
-    .map((p) => ({
-      text: chars.slice(p.start, p.end).join("").trim().replace(/[，。、；：,.;:]+$/, ""),
-      start: timeAt(p.start, "start"),
-      end: timeAt(p.end - 1, "end"),
-    }))
-    .filter((c) => c.text.length > 0);
+  return lines.map((l) => ({
+    text: l.map((w) => w.word).join(" ").replace(/[,;:—]+$/, ""),
+    start: timeAt(l[0].start, "start"),
+    end: timeAt(l[l.length - 1].end - 1, "end"),
+  }));
 };

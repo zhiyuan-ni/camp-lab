@@ -1,24 +1,24 @@
 {
   "slug": "replace-me",
   "episode": 0,
-  "title": "新一期标题",
-  "subtitle": "一句话副标题",
+  "title": "A question your viewer actually asks",
+  "subtitle": "One-line subtitle",
   "segments": [
-    { "id": "s01", "scene": "intro", "narration": "用一个生活场景或问题开场。", "props": { "hook": "抛出的问题" } },
-    { "id": "s02", "scene": "title", "narration": "点明本期要讲的核心结论。", "props": { "kicker": "真相", "heading": "核心结论", "sub": "一句解释" } },
-    { "id": "s03", "scene": "stat", "narration": "用一个有冲击力的数字建立认知。", "props": { "value": "42", "unit": "%", "label": "数字的含义" } },
-    { "id": "s04", "scene": "diagram", "narration": "解释原理，分步骤讲。", "props": { "diagram": "flow", "heading": "原理", "steps": ["第一步", "第二步", "第三步"] } },
+    { "id": "s01", "scene": "intro", "narration": "Open with a real camping moment or question.", "props": { "hook": "The question, in a few words" } },
+    { "id": "s02", "scene": "title", "narration": "State the key takeaway of this episode.", "props": { "kicker": "The truth", "heading": "The key takeaway", "sub": "One short explanation" } },
+    { "id": "s03", "scene": "stat", "narration": "Use one striking number to anchor the idea. Write numbers the way they are spoken.", "props": { "value": "42", "unit": "%", "label": "What the number means" } },
+    { "id": "s04", "scene": "diagram", "narration": "Explain how it works, one step at a time.", "props": { "diagram": "flow", "heading": "How it works", "steps": ["Step one", "Step two", "Step three"] } },
     {
       "id": "s05",
       "scene": "comparison",
-      "narration": "对比错误做法和正确做法。",
+      "narration": "Contrast the common mistake with the better approach.",
       "props": {
-        "heading": "怎么做更好？",
-        "left": { "label": "错误做法", "tone": "bad", "points": ["要点一", "要点二"] },
-        "right": { "label": "正确做法", "tone": "good", "points": ["要点一", "要点二"] }
+        "heading": "What works better?",
+        "left": { "label": "Common mistake", "tone": "bad", "points": ["Point one", "Point two"] },
+        "right": { "label": "Better approach", "tone": "good", "points": ["Point one", "Point two"] }
       }
     },
-    { "id": "s06", "scene": "checklist", "narration": "总结成可执行的清单。", "props": { "heading": "实用清单", "items": ["第一条", "第二条", "第三条"] } },
-    { "id": "s07", "scene": "outro", "narration": "关注露营科学实验室，下期再见。", "props": { "next": "下期主题" } }
+    { "id": "s06", "scene": "checklist", "narration": "Wrap up with an actionable checklist.", "props": { "heading": "Your checklist", "items": ["First item", "Second item", "Third item"] } },
+    { "id": "s07", "scene": "outro", "narration": "Follow CAMP LAB for more camping science.", "props": { "cta": "Follow for more camping science", "next": "Next episode topic" } }
   ]
 }

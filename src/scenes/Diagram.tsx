@@ -19,7 +19,7 @@ export const Diagram: React.FC<SceneProps<"diagram">> = ({ segment, narrationSta
   if (!def) {
     return (
       <SceneShell>
-        <Heading style={{ color: brand.colors.bad }}>未注册的图解：{diagram}</Heading>
+        <Heading style={{ color: brand.colors.bad }}>Unknown diagram: {diagram}</Heading>
       </SceneShell>
     );
   }
@@ -30,11 +30,11 @@ export const Diagram: React.FC<SceneProps<"diagram">> = ({ segment, narrationSta
       <div style={{ display: "flex", flexDirection: "column", gap: 30 * u, width: "100%", height: "100%", alignItems: "center" }}>
         {heading && <Heading style={riseIn(head)}>{heading}</Heading>}
         <div style={{ flex: 1, minHeight: 0, width: "100%", display: "flex", flexDirection: vertical ? "column" : "row", gap: 40 * u, alignItems: "center" }}>
-          <div style={{ flex: vertical ? "none" : showList ? 1.4 : 1, minHeight: 0, width: "100%", height: vertical ? 720 * u : "100%", display: "flex", alignItems: "center", justifyContent: "center", zoom: def.ownsSteps ? u : undefined }}>
+          <div style={{ flex: vertical ? "1 1 0" : showList ? 1.4 : 1, minHeight: 0, width: "100%", height: vertical ? undefined : "100%", display: "flex", alignItems: "center", justifyContent: "center", zoom: def.ownsSteps ? u : undefined }}>
             <Figure steps={steps} activeStep={activeStep} progress={progress} frame={frame} vertical={vertical} />
           </div>
           {showList && (
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 18 * u, width: "100%" }}>
+            <div style={{ flex: vertical ? "none" : 1, display: "flex", flexDirection: "column", gap: 18 * u, width: "100%" }}>
               {steps.map((s, i) => {
                 const on = i <= activeStep;
                 const current = i === activeStep;

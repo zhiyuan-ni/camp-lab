@@ -2,6 +2,7 @@ import React from "react";
 import { AbsoluteFill, Audio, Sequence, staticFile } from "remotion";
 import { Background } from "./components/Background";
 import { Captions } from "./components/Captions";
+import { SafeZone } from "./components/SafeZone";
 import type { Episode, Voiceover } from "./lib/schema";
 import type { Timeline } from "./lib/timeline";
 import { scenes } from "./scenes";
@@ -13,9 +14,11 @@ export type EpisodeProps = {
   /** 由 calculateMetadata 根据配音时长算出 */
   timeline?: Timeline;
   showCaptions: boolean;
+  /** 叠加安全区，自查用；在 Studio 右侧 Props 面板里勾选 */
+  showSafeZone: boolean;
 };
 
-export const EpisodeVideo: React.FC<EpisodeProps> = ({ episode, timeline, showCaptions }) => {
+export const EpisodeVideo: React.FC<EpisodeProps> = ({ episode, timeline, showCaptions, showSafeZone }) => {
   if (!timeline) return null;
   return (
     <AbsoluteFill>
@@ -35,6 +38,7 @@ export const EpisodeVideo: React.FC<EpisodeProps> = ({ episode, timeline, showCa
           </Sequence>
         );
       })}
+      {showSafeZone && <SafeZone />}
     </AbsoluteFill>
   );
 };

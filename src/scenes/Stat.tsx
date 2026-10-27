@@ -20,7 +20,7 @@ export const Stat: React.FC<SceneProps<"stat">> = ({ segment }) => {
           {unit && <span style={{ fontSize: 80 * u, fontWeight: 800 }}>{unit}</span>}
         </div>
         <div style={{ ...riseIn(l), fontSize: 48 * u, fontWeight: 700, maxWidth: 900 * u, lineHeight: 1.35 }}>{label}</div>
-        {note && <div style={{ ...riseIn(n), fontSize: 28 * u, color: brand.colors.muted }}>{note}</div>}
+        {note && <div style={{ ...riseIn(n), fontSize: 32 * u, color: brand.colors.muted }}>{note}</div>}
       </div>
     </SceneShell>
   );

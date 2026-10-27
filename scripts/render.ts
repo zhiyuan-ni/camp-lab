@@ -1,9 +1,10 @@
 /**
- * 渲染一期视频（默认横竖两版 + 封面）。
+ * 渲染一期视频：横竖两版 + 封面 → 响度检查与标准化 → 关键帧总览图。
  *
  *   npm run render -- <slug>
  *   npm run render -- <slug> --format 9x16      只出竖屏
  *   npm run render -- <slug> --no-captions      不烧录字幕
+ *   npm run render -- <slug> --no-sheet         不生成关键帧总览图
  *
  * 输出到 out/<slug>/
  */
@@ -11,6 +12,8 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { FORMATS } from "../src/brand";
+import { makeContactSheets } from "./contact-sheet";
+import { checkAndFix } from "./loudness";
 import { ROOT, loadEpisode, requireSlug } from "./paths";
 
 const args = process.argv.slice(2);
@@ -33,8 +36,14 @@ const run = (cmd: string[]) => {
 for (const f of Object.values(FORMATS)) {
   if (only && only !== f.suffix) continue;
   const id = `${slug}-${f.suffix}`;
-  run(["render", "src/index.ts", id, path.join("out", slug, `${id}.mp4`), `--props=${propsFile}`]);
+  const video = path.join("out", slug, `${id}.mp4`);
+  run(["render", "src/index.ts", id, video, `--props=${propsFile}`]);
+  checkAndFix(path.join(ROOT, video), true);
   run(["still", "src/index.ts", id, path.join("out", slug, `${id}-cover.png`), "--frame=75", `--props=${propsFile}`]);
 }
 fs.rmSync(propsFile);
+if (!args.includes("--no-sheet")) {
+  console.log("\n生成关键帧总览图…");
+  await makeContactSheets(slug);
+}
 console.log(`\n✓ 完成，输出在 out/${slug}/`);
