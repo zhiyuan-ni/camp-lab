@@ -25,11 +25,8 @@ export const LogoMark: React.FC<{ size: number; draw?: number }> = ({ size, draw
 export const Wordmark: React.FC<{ scale?: number }> = ({ scale = 1 }) => (
   <div style={{ display: "flex", alignItems: "center", gap: 18 * scale }}>
     <LogoMark size={72 * scale} />
-    <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
-      <span style={{ fontFamily: brand.fontNumber, fontWeight: 800, fontSize: 34 * scale, letterSpacing: 4 * scale, color: brand.colors.text }}>
-        {brand.name}
-      </span>
-      <span style={{ fontSize: 20 * scale, letterSpacing: 6 * scale, color: brand.colors.muted }}>{brand.nameZh}</span>
-    </div>
+    <span style={{ fontFamily: brand.font, fontWeight: 800, fontSize: 34 * scale, letterSpacing: 4 * scale, color: brand.colors.text }}>
+      {brand.name}
+    </span>
   </div>
 );

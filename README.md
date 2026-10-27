@@ -1,6 +1,8 @@
 # CAMP LAB｜露营科学实验室 · 视频工作流
 
 用 **Remotion**（React 写视频）+ **ElevenLabs**（AI 配音）半自动生产露营科普动画。
+面向海外 TikTok / YouTube：屏幕文字和旁白全部英文，屏幕上只出现品牌名 CAMP LAB。
+系列规则写在根目录 [`CLAUDE.md`](CLAUDE.md)（Claude Code 每次开会话自动读取）；每集简报模板在 [`prompts/episode-brief.md`](prompts/episode-brief.md)。
 每期视频只需要写一个 `script.json`，配音、时间轴、字幕、横竖屏版本全部自动生成。
 
 ## 一次性准备
@@ -10,20 +12,25 @@
    ```bash
    npm install
    ```
-3. 复制 `.env.example` 为 `.env`，填入 ElevenLabs 的 API Key 和中文音色的 Voice ID。
+3. 复制 `.env.example` 为 `.env`，填入 ElevenLabs 的 API Key（音色默认 `VU16byTywsWv5JpI8rbc`）。
    `.env` 不会被提交到 Git。没有 Key 也能预览和渲染，只是没有声音。
 
 ## 每期视频的流程
 
 | 步骤 | 你要做的 | 命令 |
 |---|---|---|
-| 1. 新建一期 | 起一个英文 slug 和标题 | `npm run new -- sleeping-bag-insulation "睡袋为什么能保暖？"` |
+| 1. 新建一期 | 起一个英文 slug 和标题，同时生成 `SOURCES.md`、`NOTES.md` | `npm run new -- sleeping-bag-insulation "How do sleeping bags keep you warm?"` |
 | 2. 写脚本 | 编辑 `episodes/<slug>/script.json`：每段写旁白、选场景、填画面文字 | — |
 | 3. 生成配音 | 试听 `public/voiceover/<slug>/` 里的音频，不满意就改旁白再跑一次（只会重做改过的段落） | `npm run voice -- <slug>` |
 | 4. 预览微调 | 浏览器里实时预览，改脚本或组件会热更新 | `npm run dev` |
-| 5. 渲染成片 | 横屏 + 竖屏 + 封面，输出到 `out/<slug>/` | `npm run render -- <slug>` |
+| 5. 渲染成片 | 横屏 + 竖屏 + 封面，自动响度标准化（-14 LUFS / -1 dBTP），并生成关键帧总览图，输出到 `out/<slug>/` | `npm run render -- <slug>` |
 
-渲染选项：`--format 9x16` 只出竖屏，`--no-captions` 不烧录字幕。
+渲染选项：`--format 9x16` 只出竖屏，`--no-captions` 不烧录字幕，`--no-sheet` 不出总览图。
+
+其他工具：
+- `npm run sheet -- <slug>`：只生成关键帧总览图。横竖各 9 帧，叠加安全区，竖屏每格缩到 360px 宽，用来检查手机上字是否读得清、有没有越界。
+- `npm run loudness -- out/<slug>/<file>.mp4 [--fix]`：测量响度，`--fix` 时超出目标就标准化。
+- 安全区自查：`npm run dev` 打开 Studio，在右侧 Props 面板勾选 `showSafeZone`。竖屏避开顶部 15%、底部 20%、右侧 12%。
 
 ## 脚本格式（episodes/&lt;slug&gt;/script.json）
 
@@ -31,18 +38,18 @@
 {
   "slug": "tent-condensation",      // 与文件夹同名
   "episode": 1,                     // 期数，显示为 EP.01
-  "title": "帐篷里为什么会“下雨”？",
-  "subtitle": "结露原理与防治",
+  "title": "Why is it raining inside my tent?",
+  "subtitle": "The science of tent condensation",
   "voiceId": "（可选，覆盖默认音色）",
   "bgm": "music/calm.mp3",          // 可选，放在 public/music/
   "segments": [
-    { "id": "s01", "scene": "intro", "narration": "旁白……", "props": { "hook": "抛出的问题" } }
+    { "id": "s01", "scene": "intro", "narration": "You wake up, and…", "props": { "hook": "Did your tent leak?" } }
   ]
 }
 ```
 
 每个 segment 的时长 = 配音时长 + 0.3 秒开头留白 + 0.5 秒结尾停顿（可用 `padAfter` 调整）。
-没有配音时按每秒 4.2 个字估算。
+没有配音时按每秒 2.5 个英文单词（约 150 词/分钟）估算。字幕按词断行，每行不超过 6 个词。
 
 ### 可用场景
 
@@ -75,10 +82,16 @@ episodes/
   _template/script.json        新建一期时复制的模板
   tent-condensation/
     script.json                ← 每期唯一需要编辑的内容源
+    SOURCES.md                 ← 每条事实的出处
+    NOTES.md                   ← 还没把握的事，发布前要解决
     voiceover.json             ← npm run voice 自动生成（时长 + 字符时间戳）
 public/
   voiceover/<slug>/*.mp3       ← 自动生成的配音
   music/                       背景音乐
+  fonts/                       Inter 字体（OFL）
+CLAUDE.md                      系列设定（给 Claude Code）
+LICENSES.md                    第三方授权清单
+prompts/                       单集简报、定风格用的提示词
 src/
   brand.ts                     品牌色、字体、输出尺寸（改这里全局换肤）
   Root.tsx                     自动为每期注册横竖两个合成
@@ -88,12 +101,12 @@ src/
   components/                  背景、Logo、字幕等
   lib/                         脚本 schema、时间轴与字幕计算、动画工具
 scripts/
-  new-episode.ts  voiceover.ts  render.ts  sync-episodes.ts
+  new-episode.ts  voiceover.ts  render.ts  sync-episodes.ts  loudness.ts  contact-sheet.ts
 ```
 
 ## 小贴士
 
-- **ElevenLabs 音色**：在 Voice Library 里筛选 Chinese，选好后复制 Voice ID。模型默认 `eleven_multilingual_v2`。
+- **ElevenLabs 音色**：默认 `VU16byTywsWv5JpI8rbc`，模型 `eleven_multilingual_v2`。商用需要付费套餐，见 `LICENSES.md`。
 - **省额度**：`npm run voice` 按旁白文本哈希缓存，只重新生成改过的段落；`--force` 强制全部重做。
-- **字体**：默认用系统中文字体（Windows 上是微软雅黑）。想要统一字体，可安装思源黑体 / Noto Sans SC。
-- **数字和多音字**：ElevenLabs 读中文数字偶尔不准，旁白里可以直接写汉字（“半升到一升”而不是“0.5~1L”），画面上再用数字。
+- **字体**：Inter（SIL OFL 1.1），字体文件随仓库放在 `public/fonts/`，各平台渲染一致。
+- **数字和单位**：旁白写成读法（“about half a liter”），屏幕上再写 “0.5 L”。

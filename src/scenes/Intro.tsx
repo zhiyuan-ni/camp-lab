@@ -15,12 +15,11 @@ export const Intro: React.FC<SceneProps<"intro">> = ({ episode, segment }) => {
   const titleIn = useEnter(22);
   const hookIn = useEnter(34);
   return (
-    <SceneShell badge={false}>
+    <SceneShell>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 28 * u }}>
         <LogoMark size={180 * u} draw={draw} />
         <div style={{ ...riseIn(brandIn), textAlign: "center" }}>
           <div style={{ fontFamily: brand.fontNumber, fontWeight: 800, fontSize: 40 * u, letterSpacing: 10 * u }}>{brand.name}</div>
-          <div style={{ fontSize: 24 * u, letterSpacing: 10 * u, color: brand.colors.muted }}>{brand.nameZh}</div>
         </div>
         <div style={{ ...riseIn(titleIn), display: "flex", flexDirection: "column", alignItems: "center", gap: 12 * u, marginTop: 30 * u }}>
           <div

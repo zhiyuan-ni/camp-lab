@@ -1,71 +1,71 @@
 {
   "slug": "tent-condensation",
   "episode": 1,
-  "title": "帐篷里为什么会“下雨”？",
-  "subtitle": "结露原理与防治",
+  "title": "Why is it raining inside my tent?",
+  "subtitle": "The science of tent condensation",
   "segments": [
     {
       "id": "s01",
       "scene": "intro",
-      "narration": "清晨醒来，帐篷内壁挂满水珠，甚至滴到了睡袋上。是帐篷漏水了吗？",
-      "props": { "hook": "是帐篷漏水了吗？" }
+      "narration": "You wake up, and the inside of your tent is dripping wet. Did it leak overnight?",
+      "props": { "hook": "Did your tent leak?" }
     },
     {
       "id": "s02",
       "scene": "title",
-      "narration": "其实大多数时候，帐篷并没有漏水。这些水，来自帐篷里面的你。",
-      "props": { "kicker": "真相", "heading": "结露，不是漏水", "sub": "水来自帐篷里面" }
+      "narration": "Probably not. That water didn't come in from outside. It came from you.",
+      "props": { "kicker": "The truth", "heading": "It's condensation, not a leak", "sub": "The water comes from inside" }
     },
     {
       "id": "s03",
       "scene": "stat",
-      "narration": "一个成年人睡一晚，通过呼吸和皮肤散发的水汽，大约有半升到一升。",
-      "props": { "value": "0.5~1", "unit": "升", "label": "一个人一晚通过呼吸和皮肤散发的水汽", "note": "相当于一到两瓶矿泉水" }
+      "narration": "Over one night, a sleeping adult releases somewhere between half a liter and a full liter of water vapor, just from breathing and sweating.",
+      "props": { "value": "0.5–1", "unit": "L", "label": "Water vapor one person releases overnight", "note": "Roughly one or two water bottles" }
     },
     {
       "id": "s04",
       "scene": "diagram",
-      "narration": "这些水汽让帐篷里的空气又暖又湿。暖湿空气上升，碰到被夜风吹冷的外帐。当布料温度低于空气的露点，水汽就会在内侧凝结成水珠。",
+      "narration": "That vapor makes the air in your tent warm and humid. The warm air rises and hits the rainfly, which the night air has cooled down. Once the fabric drops below the air's dew point, the vapor turns back into water droplets.",
       "props": {
         "diagram": "condensation",
-        "heading": "结露是怎么发生的",
-        "steps": ["人体散发水汽，帐内又暖又湿", "暖湿空气上升，接触冰冷外帐", "低于露点，水汽凝结成水珠"]
+        "heading": "How condensation forms",
+        "steps": ["You breathe out warm, moist air", "It rises and hits the cold fly", "Below the dew point, it turns to water"]
       }
     },
     {
       "id": "s05",
       "scene": "diagram",
-      "narration": "所谓露点，就是空气中的水汽开始凝结的温度。空气越湿，露点越高，也就越容易结露。",
+      "narration": "The dew point is the temperature where water vapor starts turning into liquid. The more humid the air, the higher the dew point, and the easier it is to get condensation.",
       "props": {
         "diagram": "flow",
-        "heading": "关键概念：露点",
-        "steps": ["暖湿空气", "遇到冷表面", "降到露点以下", "凝结成水"]
+        "heading": "Key idea: the dew point",
+        "steps": ["Warm, moist air", "Hits a cold surface", "Cools below dew point", "Turns to water"]
       }
     },
     {
       "id": "s06",
       "scene": "comparison",
-      "narration": "无风、潮湿的夜晚，在水边低洼处扎营，又把门窗全部关紧，最容易结露。有微风、地势略高、通风口打开时，结露就会少很多。",
+      "narration": "Calm, damp nights are the worst, especially near water with every door zipped shut. A light breeze, higher ground, and open vents make a huge difference.",
       "props": {
-        "heading": "什么时候最容易结露？",
-        "left": { "label": "容易结露", "tone": "bad", "points": ["无风、潮湿的夜晚", "河边、湖边低洼处", "门窗全部紧闭"] },
-        "right": { "label": "不易结露", "tone": "good", "points": ["有微风的干燥夜晚", "地势略高的开阔处", "打开通风口"] }
+        "heading": "When is it worst?",
+        "left": { "label": "More condensation", "tone": "bad", "points": ["Calm, damp nights", "Low ground near water", "Doors zipped shut"] },
+        "right": { "label": "Less condensation", "tone": "good", "points": ["A light breeze", "Higher, open ground", "Vents wide open"] }
       }
     },
     {
       "id": "s07",
       "scene": "checklist",
-      "narration": "记住这份防结露清单：打开顶部通风口，让内外帐保持张紧不贴合，避开河边洼地，湿衣物不要放进内帐，早上先擦干再收帐。",
+      "narration": "So here's your checklist. Open the top vents. Keep the fly taut so it doesn't touch the inner tent. Skip low spots by rivers and lakes. Keep wet gear out of the inner tent. And wipe the fly dry before you pack it.",
       "props": {
-        "heading": "防结露清单",
-        "items": ["打开顶部通风口", "内外帐张紧不贴合", "避开河边洼地扎营", "湿衣物不放内帐", "早上擦干再收帐"]
+        "heading": "Beat condensation",
+        "items": ["Open the top vents", "Keep the fly taut", "Avoid low spots near water", "Keep wet gear outside", "Wipe it dry before packing"]
       }
     },
     {
       "id": "s08",
       "scene": "outro",
-      "narration": "关注露营科学实验室。下期我们来聊，睡袋到底是怎么保暖的。",
-      "props": { "next": "睡袋为什么能保暖？" }
+      "narration": "Follow CAMP LAB for more camping science. Next time: how does a sleeping bag actually keep you warm?",
+      "props": { "cta": "Follow for more camping science", "next": "How do sleeping bags keep you warm?" }
     }
   ]
 }

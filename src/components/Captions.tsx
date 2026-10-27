@@ -8,16 +8,16 @@ import type { Caption } from "../lib/timeline";
 export const Captions: React.FC<{ captions: Caption[]; offset: number }> = ({ captions, offset }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const { u, captionBottom, pad } = useLayout();
+  const { u, captionBottom, safe } = useLayout();
   const t = (frame - offset) / fps;
   const current = captions.find((c, i) => t >= c.start && t < (captions[i + 1]?.start ?? c.end + 0.6));
   if (!current) return null;
   return (
-    <AbsoluteFill style={{ justifyContent: "flex-end", alignItems: "center", paddingBottom: captionBottom, paddingLeft: pad, paddingRight: pad }}>
+    <AbsoluteFill style={{ justifyContent: "flex-end", alignItems: "center", paddingBottom: captionBottom, paddingLeft: safe.left, paddingRight: safe.right }}>
       <div
         style={{
           fontFamily: brand.font,
-          fontSize: 46 * u,
+          fontSize: 48 * u,
           fontWeight: 700,
           color: brand.colors.text,
           background: "rgba(8, 19, 15, 0.72)",
