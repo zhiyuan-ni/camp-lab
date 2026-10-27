@@ -1,0 +1,24 @@
+{
+  "slug": "replace-me",
+  "episode": 0,
+  "title": "新一期标题",
+  "subtitle": "一句话副标题",
+  "segments": [
+    { "id": "s01", "scene": "intro", "narration": "用一个生活场景或问题开场。", "props": { "hook": "抛出的问题" } },
+    { "id": "s02", "scene": "title", "narration": "点明本期要讲的核心结论。", "props": { "kicker": "真相", "heading": "核心结论", "sub": "一句解释" } },
+    { "id": "s03", "scene": "stat", "narration": "用一个有冲击力的数字建立认知。", "props": { "value": "42", "unit": "%", "label": "数字的含义" } },
+    { "id": "s04", "scene": "diagram", "narration": "解释原理，分步骤讲。", "props": { "diagram": "flow", "heading": "原理", "steps": ["第一步", "第二步", "第三步"] } },
+    {
+      "id": "s05",
+      "scene": "comparison",
+      "narration": "对比错误做法和正确做法。",
+      "props": {
+        "heading": "怎么做更好？",
+        "left": { "label": "错误做法", "tone": "bad", "points": ["要点一", "要点二"] },
+        "right": { "label": "正确做法", "tone": "good", "points": ["要点一", "要点二"] }
+      }
+    },
+    { "id": "s06", "scene": "checklist", "narration": "总结成可执行的清单。", "props": { "heading": "实用清单", "items": ["第一条", "第二条", "第三条"] } },
+    { "id": "s07", "scene": "outro", "narration": "关注露营科学实验室，下期再见。", "props": { "next": "下期主题" } }
+  ]
+}

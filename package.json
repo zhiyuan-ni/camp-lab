@@ -1,0 +1,29 @@
+{
+  "name": "camp-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "CAMP LAB｜露营科学实验室 — Remotion + ElevenLabs 半自动科普视频工作流",
+  "scripts": {
+    "sync": "tsx scripts/sync-episodes.ts",
+    "new": "tsx scripts/new-episode.ts",
+    "voice": "tsx scripts/voiceover.ts",
+    "dev": "npm run sync && remotion studio",
+    "render": "npm run sync && tsx scripts/render.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.539",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.539",
+    "zod": "4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "22.18.0",
+    "@types/react": "19.2.2",
+    "dotenv": "16.6.1",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3"
+  }
+}
