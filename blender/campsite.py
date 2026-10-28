@@ -91,7 +91,7 @@ def vapor_mat(density=6.0, falloff=False):
     vol = nt.nodes.new("ShaderNodeVolumePrincipled")
     vol.inputs["Color"].default_value = srgb(0xE8F6FF)
     vol.inputs["Emission Color"].default_value = srgb(0xBFE8FF)
-    vol.inputs["Emission Strength"].default_value = 0.35
+    vol.inputs["Emission Strength"].default_value = 0.08
     tex = nt.nodes.new("ShaderNodeTexCoord")
     noise = nt.nodes.new("ShaderNodeTexNoise")
     noise.inputs["Scale"].default_value = 3.0
@@ -396,26 +396,28 @@ def tent_and_sleeper():
     # warm light inside the tent
     lamp = bpy.data.lights.new("tent_lamp", "POINT")
     lamp.color = srgb(0xFFB066)[:3]
-    lamp.energy = 25
-    lamp.shadow_soft_size = 0.15
+    # hung low on a cord so it sits ~0.3 m from the inner walls instead of burning a hot spot into them
+    lamp.energy = 8
+    lamp.shadow_soft_size = 0.3
     lo = link(bpy.data.objects.new("tent_lamp", lamp))
-    lo.location = (0.2, 0, 1.0)
+    lo.location = (0.45, 0, 0.72)
     lo.parent = root
-    uvsphere("tent_bulb", 0.05, mat("bulb", 0xFFD59A, emit=8), (0.2, 0, 1.06), parent=root)
+    uvsphere("tent_bulb", 0.04, mat("bulb", 0xFFD59A, emit=4), (0.45, 0, 0.76), parent=root)
+    cyl("lamp_cord", 0.004, 0.004, TH - 0.12 - 0.8, mat("wire", 0x1A1A1A, 0.5), (0.45, 0, (TH - 0.12 + 0.8) / 2), segs=4, parent=root)
     # condensation on the underside of the fly (far slope + ridge; the near slope gets cut away)
-    drop_m = mat("drop", 0x9FDcff, 0.02, emit=0.6, emit_hex=0x58BFFF, transmission=0.7, ior=1.33)
-    src = uvsphere("drop_src", 0.03, drop_m, (0, 0, -10), scale=(1, 1, 1.35), segs=10, rings=6, parent=root)
+    drop_m = mat("drop", 0x9FDcff, 0.02, emit=0.15, emit_hex=0x58BFFF, transmission=0.9, ior=1.33)
+    src = uvsphere("drop_src", 0.014, drop_m, (0, 0, -10), scale=(1, 1, 1.35), segs=10, rings=6, parent=root)
     drops = [src]
     for i in range(170):
         v = rng.random() ** 0.8 * 0.92 + 0.04
         x = R(-(TL + 0.4) / 2, (TL + 0.4) / 2)
-        y = (W2 * (1 - v) - 0.06)  # +y side = far side once the tent is rotated (see cut normal)
-        z = 0.12 + (H2 - 0.12) * v - 0.075
+        y = (W2 * (1 - v) - 0.065)  # +y side = far side once the tent is rotated (see cut normal)
+        z = 0.12 + (H2 - 0.12) * v - 0.09
         s = R(0.5, 1.3)
         drops.append(instance(src, "drop", (x, y, z), scale=(s, s, s * 1.35), parent=root))
-    falling = uvsphere("falling_drop", 0.035, drop_m, (0.3, 0.15, 1.0), scale=(1, 1, 1.6), parent=root)
+    falling = uvsphere("falling_drop", 0.022, drop_m, (0.3, 0.15, 1.0), scale=(1, 1, 1.6), parent=root)
     # breath: a volumetric plume rising from the sleeper's face toward the ridge
-    plume = uvsphere("breath", 1.0, vapor_mat(density=16.0, falloff=True), (-0.35, 0.0, 0.75), scale=(0.75, 0.38, 0.55), rot=(0, -0.6, 0), segs=16, rings=10, parent=root)
+    plume = uvsphere("breath", 1.0, vapor_mat(density=8.0, falloff=True), (-0.35, 0.0, 0.75), scale=(0.75, 0.38, 0.55), rot=(0, -0.6, 0), segs=16, rings=10, parent=root)
     plume.visible_shadow = False
     cutters = [fly, back, inner, inner_back, floor, tape]
     return root, cutters, drops, falling, plume, dict(TL=TL, TW=TW, TH=TH)
@@ -594,7 +596,7 @@ def string_lights():
     cols = [0xFFD27A, 0xFF9E7A, 0xA6E3FF]
     for i in range(1, n):
         col = cols[i % 3]
-        bl = uvsphere("bulb", 0.035, mat(f"bulb{col}", col, 0.3, emit=30), pts[i] - Vector((0, 0, 0.05)), segs=8, rings=6)
+        bl = uvsphere("bulb", 0.035, mat(f"bulb{col}", col, 0.3, emit=5), pts[i] - Vector((0, 0, 0.05)), segs=8, rings=6)
         bl.visible_shadow = False
         bulbs.append(bl)
     return bulbs
@@ -643,7 +645,7 @@ def scatter():
 
 
 def fireflies():
-    m = mat("firefly", 0xD9FF7A, emit=25)
+    m = mat("firefly", 0xD9FF7A, emit=10)
     out = []
     for i in range(24):
         f = uvsphere("firefly", 0.022, m, (0, 0, 0), segs=6, rings=4)
@@ -838,7 +840,8 @@ def pose(shot, t, aspect=16 / 9):
     W_pos, W_look = Vector((math.sin(0.78) * 31, -math.cos(0.78) * 31, 17)), Vector((0, 0, -1.6))
     side, ridge, near = set_cut(0)
     c = tent.location
-    C_pos = c + near * 6.2 + ridge * 2.2 + Vector((0, 0, 3.0))
+    # three-quarter view from the open end, so the sliced A-frame reads as a triangle rather than a flat wall
+    C_pos = c + near * 5.0 + ridge * 3.8 + Vector((0, 0, 2.4))
     C_look = c + Vector((0, 0, 0.6))
     lens = 50
     if shot == "wide":
