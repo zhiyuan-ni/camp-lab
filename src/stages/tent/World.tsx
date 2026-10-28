@@ -193,6 +193,98 @@ const Island: React.FC = () => {
   );
 };
 
+
+// ---------------------------------------------------------------- 篷布细节：接缝、卷起的门帘、通风口
+const SLOPE_RUN = W2;
+const SLOPE_RISE = H2 - EAVE_Y;
+const SLOPE_LEN = Math.hypot(SLOPE_RUN, SLOPE_RISE);
+const SLOPE_ANGLE = Math.atan2(SLOPE_RISE, SLOPE_RUN);
+/** 外帐外表面上的点（v：0 檐口，1 屋脊）和朝外的法线 */
+const onFly = (x: number, v: number, side: 1 | -1) => ({
+  p: new THREE.Vector3(x, EAVE_Y + SLOPE_RISE * v, side * W2 * (1 - v)),
+  n: new THREE.Vector3(0, SLOPE_RUN, side * SLOPE_RISE).normalize(),
+});
+
+const FlyDetails: React.FC<{ fly: THREE.Material; ventOpen: number; day: number }> = ({ fly, ventOpen, day }) => {
+  const m = useMemo(
+    () => ({
+      seam: new THREE.MeshStandardMaterial({ color: 0xf47a45, roughness: 0.6, side: THREE.DoubleSide, flatShading: true, emissive: 0xff7a3a }),
+      roll: new THREE.MeshStandardMaterial({ color: 0xd9552a, roughness: 0.75, flatShading: true }),
+      strap: new THREE.MeshStandardMaterial({ color: 0x2b2b2b, roughness: 0.6 }),
+      dark: new THREE.MeshBasicMaterial({ color: 0x1a0d08 }),
+      steel: new THREE.MeshStandardMaterial({ color: 0xbbbbbb, metalness: 0.8, roughness: 0.35 }),
+    }),
+    [],
+  );
+  // 接缝和篷布一样被晨光透亮，只是稍浅一点，不会在帐篷里看成一根根黑条
+  m.seam.emissiveIntensity = 0.34 * day;
+  const seams: React.ReactNode[] = [];
+  for (const side of [1, -1] as const) {
+    for (const x of [-FLY_LEN / 6, FLY_LEN / 6]) {
+      const { p, n } = onFly(x, 0.5, side);
+      p.addScaledVector(n, -FLY_TH / 2);
+      seams.push(
+        <mesh key={`${side}${x}`} material={m.seam} position={p} rotation={[side * SLOPE_ANGLE, 0, 0]}>
+          <boxGeometry args={[0.035, FLY_TH + 0.012, SLOPE_LEN]} />
+        </mesh>,
+      );
+    }
+  }
+  // 门帘卷起绑在两边：沿门口两条斜边
+  const rolls = ([1, -1] as const).map((side) => {
+    const a = onFly(FLY_LEN / 2 - 0.05, 0.02, side).p;
+    const b = onFly(FLY_LEN / 2 - 0.05, 0.72, side).p;
+    const n = onFly(0, 0, side).n;
+    const mid = a.clone().add(b).multiplyScalar(0.5).addScaledVector(n, -0.03);
+    const d = b.clone().sub(a);
+    const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize());
+    return (
+      <group key={side} position={mid} quaternion={q}>
+        <mesh material={m.roll} castShadow>
+          <cylinderGeometry args={[0.045, 0.045, d.length(), 10]} />
+        </mesh>
+        {[-0.25, 0.25].map((t) => (
+          <mesh key={t} material={m.strap} position={[0, t * d.length(), 0]}>
+            <cylinderGeometry args={[0.05, 0.05, 0.025, 10]} />
+          </mesh>
+        ))}
+      </group>
+    );
+  });
+  // 顶部通风口：屋脊下方、帐篷后段两面各一个，罩子绕上边缘撑开
+  const vents = ([1, -1] as const).map((side) => {
+    const { p } = onFly(-FLY_LEN / 2 + 0.42, 0.8, side);
+    return (
+      <group key={side} position={p} rotation={[side * SLOPE_ANGLE, 0, 0]}>
+        <mesh material={m.dark} position={[0, 0.002, 0]}>
+          <boxGeometry args={[0.34, 0.004, 0.12]} />
+        </mesh>
+        {/* 铰链在靠屋脊的一边（局部 -z 一侧朝屋脊） */}
+        <group position={[0, 0.004, -side * 0.08]} rotation={[-side * (0.12 + 0.75 * ventOpen), 0, 0]}>
+          <mesh material={fly} position={[0, 0.006, side * 0.09]} castShadow>
+            <boxGeometry args={[0.4, 0.012, 0.2]} />
+          </mesh>
+        </group>
+      </group>
+    );
+  });
+  // 地钉
+  const stakes = [];
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) stakes.push(
+    <mesh key={`${sx}${sz}`} material={m.steel} position={[sx * (FLY_LEN / 2 + 1.0), 0.05, sz * 0.9]}>
+      <cylinderGeometry args={[0.012, 0.006, 0.12, 6]} />
+    </mesh>,
+  );
+  return (
+    <>
+      {seams}
+      {rolls}
+      {vents}
+      {stakes}
+    </>
+  );
+};
+
 // ---------------------------------------------------------------- 帐篷、睡着的人、凝结水
 const DROPS = dropletLayout(900);
 
@@ -226,6 +318,8 @@ const Tent: React.FC<{ state: TentState }> = ({ state }) => {
       hair: new THREE.MeshStandardMaterial({ color: 0x3a2a22, roughness: 0.8 }),
       wet: new THREE.MeshStandardMaterial({ color: 0x2a55b0, roughness: 0.25, transparent: true, depthWrite: false }),
       drop: new THREE.MeshPhysicalMaterial({ color: 0xe6f6ff, roughness: 0.03, transmission: 1, thickness: 0.04, ior: 1.33, envMap: env, envMapIntensity: 1.0 }),
+      // 主角水珠：反光更亮、带一点冷色，在一片小水珠里一眼能认出来
+      hero: new THREE.MeshPhysicalMaterial({ color: 0xd8f1ff, roughness: 0.0, transmission: 1, thickness: 0.12, ior: 1.33, envMap: env, envMapIntensity: 2.6, attenuationColor: new THREE.Color(0x9fd8ff), attenuationDistance: 0.25, emissive: 0x7fc8ff, emissiveIntensity: 0.12 }),
     }),
     [env],
   );
@@ -274,6 +368,7 @@ const Tent: React.FC<{ state: TentState }> = ({ state }) => {
       <pointLight position={[1.25, 0.7, 0]} color={0xffd2a0} intensity={2.5 * state.day} distance={3.2} decay={1.5} />
       <mesh geometry={g.fly} material={m.fly} castShadow receiveShadow />
       <mesh geometry={g.back} material={m.fly} position={[-FLY_LEN / 2, 0, 0]} castShadow />
+      <FlyDetails fly={m.fly} ventOpen={state.ventOpen} day={state.day} />
       <mesh geometry={g.inner} material={m.inner} visible={state.inner > 0.01} />
       <mesh material={m.floor} position={[0, 0.04, 0]} receiveShadow>
         <boxGeometry args={[TL - 0.2, 0.08, TW - 0.24]} />
@@ -309,7 +404,7 @@ const Tent: React.FC<{ state: TentState }> = ({ state }) => {
         <sphereGeometry args={[1, 14, 10]} />
       </instancedMesh>
       {state.bigDrop.show && splash < 1 && (
-        <mesh material={m.drop} position={[BIG_DROP.x, dropY, top.z]} scale={[0.06 * dropScale, 0.06 * dropScale * (fall < 0 ? 1.2 + 0.35 * grow : 1.7), 0.06 * dropScale]}>
+        <mesh material={m.hero} position={[BIG_DROP.x, dropY, top.z]} scale={[0.06 * dropScale, 0.06 * dropScale * (fall < 0 ? 1.2 + 0.35 * grow : 1.7), 0.06 * dropScale]}>
           <sphereGeometry args={[1, 24, 18]} />
         </mesh>
       )}

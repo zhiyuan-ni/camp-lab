@@ -14,6 +14,7 @@ const base = (ctx: ShotContext): TentState => ({
   drops: 0,
   bigDrop: { show: false, grow: 0, fall: -1, splash: 0 },
   inner: 1,
+  ventOpen: 0,
   time: ctx.time,
   clock: null,
 });
@@ -24,14 +25,14 @@ const HOOK_B: CameraPose = { pos: [-0.86, 0.55, -0.29], look: [0.1, 0.55, 0.18],
 
 const orbit = (a: number, r: number, h: number): Vec3 => [Math.cos(a) * r, h, Math.sin(a) * r];
 // 出帐篷：往后退，穿过后墙篷布，到帐篷后方。穿布那一下满屏橙色，就是转场
-const EXIT: Vec3[] = [HOOK_B.pos, [-1.25, 0.66, 0.35], [-1.9, 0.9, 0.7], [-3.2, 1.4, 1.2], orbit(2.75, 4.6, 1.7)];
+const EXIT: Vec3[] = [HOOK_B.pos, [-1.3, 0.7, 0.35], [-2.6, 1.4, 1.1], [-3.8, 1.75, 1.55], orbit(2.75, 4.6, 1.7)];
 const exitAt = (u: number): CameraPose => ({
   pos: spline(EXIT, u),
   look: lerp3(HOOK_B.look, [0, 0.65, 0], seg(u, 0, 0.35)),
   fov: lerp(HOOK_B.fov, 34, seg(u, 0, 0.6)),
 });
 /** hook 结束时走到出帐路径的哪里：刚穿出后墙 */
-const HOOK_EXIT_END = 0.33;
+const HOOK_EXIT_END = 0.3;
 // s02 的绕行：从帐篷后方经过向阳的一侧，绕到门前 3/4 位置
 const ORBIT_FROM = 2.75;
 const ORBIT_TO = 0.68;
@@ -42,11 +43,12 @@ const hook: Shot<TentState> = {
     const { p } = ctx;
     // 慢慢推近挂着的大水珠；水珠一落，镜头跟着它往下摇到睡袋
     const push = seg(p, 0, 0.45);
-    const follow = seg(p, 0.46, 0.6);
+    const follow = seg(p, 0.46, 0.64);
     const exit = seg(p, 0.78, 1, Easing.in(Easing.quad));
     const grow = seg(p, 0, 0.45, Easing.out(Easing.quad));
-    const fall = p < 0.47 ? -1 : clamp01((p - 0.47) / 0.07);
-    const splash = clamp01((p - 0.54) / 0.2);
+    // 下落放慢到约 0.6 秒（真实约 0.4 秒），手机上不会看漏
+    const fall = p < 0.47 ? -1 : clamp01((p - 0.47) / 0.11);
+    const splash = clamp01((p - 0.58) / 0.18);
     const near: CameraPose = {
       pos: lerp3(HOOK_A.pos, HOOK_B.pos, push),
       look: lerp3(HOOK_A.look, HOOK_B.look, follow),
@@ -67,11 +69,12 @@ const rewind: Shot<TentState> = {
   headingAt: 0.3,
   pose: (ctx) => {
     const { p } = ctx;
-    const out = seg(p, 0, 0.28, Easing.out(Easing.quad));
-    const swing = seg(p, 0.22, 1);
+    // 刚穿出篷布时离后墙很近、满屏橙色：开头快速拉远
+    const out = seg(p, 0, 0.2, Easing.out(Easing.cubic));
+    const swing = seg(p, 0.16, 1);
     const back = seg(p, 0.5, 0.97);
     let camera: CameraPose;
-    if (p < 0.28) camera = exitAt(lerp(HOOK_EXIT_END, 1, out));
+    if (p < 0.2) camera = exitAt(lerp(HOOK_EXIT_END, 1, out));
     else {
       camera = {
         pos: orbit(lerp(ORBIT_FROM, ORBIT_TO, swing), lerp(4.6, 6.0, swing), lerp(1.7, 2.1, swing)),

@@ -10,6 +10,8 @@ export type TentState = {
   bigDrop: { show: boolean; grow: number; fall: number; splash: number };
   /** 内帐网眼的可见度 0→1（钩子镜头在帐篷里时隐藏，免得网眼糊住镜头） */
   inner: number;
+  /** 顶部通风口撑开的程度 0→1 */
+  ventOpen: number;
   /** 全片秒数，用于呼吸 */
   time: number;
   /** 倒带时的故事时钟（小时，可超过 24），null 不显示 */
