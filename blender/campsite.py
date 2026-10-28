@@ -578,8 +578,10 @@ def path_stones():
 
 
 def string_lights():
-    a, b = Vector((-1.2, -0.16, 1.5)), Vector((3.3, 3.3, 1.9))
-    cyl("light_pole", 0.04, 0.05, 2.0, mat("wood_dark", P["wood_dark"]), (3.3, 3.3, 1.0), segs=8)
+    # strung behind the tent between two poles, so they never hang across the tent close-ups
+    a, b = Vector((-0.6, 3.4, 1.9)), Vector((3.3, 3.3, 1.9))
+    for p in (a, b):
+        cyl("light_pole", 0.04, 0.05, 2.0, mat("wood_dark", P["wood_dark"]), (p.x, p.y, 1.0), segs=8)
     wire = mat("wire", 0x1A1A1A, 0.5)
     n = 16
     pts = []
@@ -647,10 +649,13 @@ def scatter():
 def fireflies():
     m = mat("firefly", 0xD9FF7A, emit=10)
     out = []
-    for i in range(24):
+    while len(out) < 24:
+        x, y = R(-6, 6), R(-3, 6)
+        if math.hypot(x + 1.7, y - 1.2) < 3.0:  # keep them out of the tent close-ups
+            continue
         f = uvsphere("firefly", 0.022, m, (0, 0, 0), segs=6, rings=4)
         f.visible_shadow = False
-        out.append((f, R(-6, 6), R(-3, 6), R(0.4, 1.6), rng.random() * 10))
+        out.append((f, x, y, R(0.4, 1.6), rng.random() * 10))
     return out
 
 
