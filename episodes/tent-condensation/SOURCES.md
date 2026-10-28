@@ -3,8 +3,13 @@
 Every factual claim on screen or in the narration needs one row: claim, source link, quoted excerpt.
 Claims without a reliable source go to NOTES.md and must not be published.
 
-| Claim | Source | Excerpt |
-|---|---|---|
-| Condensation forms when moist air touches a surface colder than the air's dew point | _TODO_ | |
-| A sleeping adult releases about 0.5–1 L of water vapor overnight | _TODO — see NOTES.md_ | |
-| Ventilation, breeze and higher ground reduce tent condensation | _TODO_ | |
+| Claim | Segment | Source | Excerpt |
+|---|---|---|---|
+| The water inside the tent comes from the people in it, mainly their breath | s03 | [REI Expert Advice: How to Prevent Condensation in a Tent](https://www.rei.com/learn/expert-advice/how-to-prevent-condensation-in-a-tent.html) | “Air inside the tent is almost always more humid than the surrounding air.” … “Moisture added to your inner airspace by each breath you take at night” |
+| One sleeper puts about a cup of water vapor into the air overnight | s03 | [Fluid Physiology (Brandis), 3.2 Insensible Water Loss, LibreTexts](https://med.libretexts.org/Bookshelves/Anatomy_and_Physiology/Fluid_Physiology_(Brandis)/03%3A_Water_Balance/3.02%3A_Insensible_Water_Loss) | Skin: “Daily loss is about 400 mls in an adult.” Respiratory tract: “about 400 mls/day in an unstressed adult.” **Derived:** (400 + 400) mL/day × 8 h / 24 h ≈ 270 mL ≈ 1 US cup (237 mL). Approved for screen by the producer on 2026-10-28. |
+| On calm, clear nights, surfaces lose heat to the sky by radiation | s04 | [AMS Glossary of Meteorology: Radiational cooling](https://glossary.ametsoc.org/wiki/Radiational_cooling) | “Radiational cooling occurs, as is typical on calm, clear nights, whenever the longwave emission from the surface is not balanced by …” |
+| Condensation happens when warm air meets a cold surface, and it collects on the underside of the rainfly | s04, s05 | [REI Expert Advice](https://www.rei.com/learn/expert-advice/how-to-prevent-condensation-in-a-tent.html) | “When warm air contacts a cold surface, condensation can happen.” … “The result is condensation on the underside of your rainfly.” |
+| Dew point: the temperature air must be cooled to before it becomes saturated | s05 | [CIMSS, University of Wisconsin–Madison: Dew Point and Relative Humidity](https://cimss.ssec.wisc.edu/wxwise/rh/page2.html) | “The dew point is the temperature to which air must be cooled to become saturated without changing the pressure.” |
+| Still nights need open doors and vents; wind pumps the damp air out | s06, s07 | [Terra Nova: How to Avoid Tent Condensation](https://www.terra-nova.co.uk/guides/how-to-avoid-tent-condensation/) | “On still, dry nights, leave the flysheet doors and vents open as much as possible.” … “the action of the wind on the flysheet pumps out the damp air” |
+| Low spots collect cold air; lakes and streams mean more humidity | s06 | [Section Hiker: How to Prevent Tent Condensation](https://sectionhiker.com/how-to-prevent-tent-condensation/) | “Avoid setting up your tent at a low point in the landscape where cold air pools at night.” “Avoid camping near streams, lakes, ponds, or in wet or marshy areas where the humidity is higher.” |
+| Open the vents, keep the fly taut, pitch on dry ground under trees | s07 | [REI Expert Advice](https://www.rei.com/learn/expert-advice/how-to-prevent-condensation-in-a-tent.html) | “Open up all rainfly vents, especially opposing ones for cross ventilation.” “Stake the tent out tautly and tension the fly …” “Pitch on dry ground, preferably under trees.” |

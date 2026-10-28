@@ -28,6 +28,7 @@
 | 缓动和动画工具 | `src/lib/anim.ts` |
 | 场景 | `src/scenes/`，在 `scenes/index.ts` 注册 |
 | 原理图解 | `src/diagrams/`，在 `diagrams/index.ts` 注册 |
+| 3D 舞台和镜头 | `src/stages/<stage>/`，在 `stages/index.ts` 注册；镜头写在 `shots.ts` |
 | 事实出处 | `episodes/<slug>/SOURCES.md` |
 | 没把握的事 | `episodes/<slug>/NOTES.md` |
 | 第三方授权 | 仓库根 `LICENSES.md` |
@@ -45,7 +46,7 @@ npm run loudness -- <file> [--fix]  测量 / 标准化响度
 npm run typecheck
 ```
 
-- 先用现有场景：intro、title、stat、diagram、comparison、checklist、outro。只有它们表达不了时才新增场景或图解。新增的要靠 props 驱动、横竖屏都适配，注册后同步更新 schema 和 README 的场景表。
+- 先用现有场景：intro、title、stat、diagram、comparison、checklist、outro、stage。只有它们表达不了时才新增场景、图解或舞台镜头。新增的要靠 props 驱动、横竖屏都适配，注册后同步更新 schema 和 README 的场景表。
 - `remotion` 和所有 `@remotion/*` 锁成同一个精确版本（看 `package.json`）。加新包时用同一个版本号；新依赖必须可商用，并写进 `LICENSES.md`。
 - 不改品牌参数，除非我明确要求。
 
@@ -137,13 +138,21 @@ npm run typecheck
 - `@remotion/*` 版本不一致会出很怪的错。
 - 发光：亮部复制一层，缩小、模糊，再用 screen 模式叠回去，控制强度。CSS 的大半径 blur、box-shadow、backdrop-filter 很慢，能缩小了再模糊就缩小。
 
+## 系列视觉语言（2026-10-28 定）
+
+- 基调：低多边形 3D 小场景。每集一个小舞台（一顶帐篷、一个睡袋、一块营地），放在一小块圆形地面上，细节全花在和这一集现象有关的东西上，不铺无关道具。
+- 一镜到底：整集共用一块 3D 画布，镜头推、拉、绕、穿过物体来转场，不切不淡入淡出。
+- 两种看法：普通视角讲“发生了什么”和“怎么做”；**Lab View** 讲“为什么”：热成像色阶（暖是橙、冷是冰蓝），其余压暗，水汽、热量这些看不见的东西做成会发光的粒子或线。从普通视角切到 Lab View 用一道扫描线扫过。
+- 屏幕标题贴左上安全区，不做居中大字卡；读数和标注贴在 3D 物体旁边，跟着物体走。
+- 屏幕上不写具体温度，冷暖用颜色和一条“Dew point”之类的参考线表示。
+
 ## 新增画面时的技术选择
 
-只在新增场景或图解时参考；整个系列的基调是干净的扁平图解，不要因为某一集换一套视觉语言。
+只在新增场景、图解或舞台镜头时参考；不要因为某一集换一套视觉语言。
 
 - 原理图、剖面图、流程：React + SVG，`spring()` / `interpolate()`；画线用 `@remotion/paths`；文字尺寸用 `@remotion/layout-utils` 量好再排。
 - 水汽、水珠、热量这类大量粒子：组件里放 `<canvas>`，按帧号整帧重画；随机性用 `random(seed)` 或 `@remotion/noise`。
 - 公式：简单的用 KaTeX 排版、SVG 做动画。
-- 3D（例如帐篷结构）：`@remotion/three`，相机和物体位置从帧号算，不用 `useFrame`。很少需要，用之前先问我。
+- 3D 舞台：`@remotion/three`，相机和物体位置从帧号算（镜头函数输入进度 p），不用 `useFrame`；每帧要变的东西在 `useLayoutEffect` 里改，赶在画布出图之前。随机用 `random(seed)`。
 - 水、光、流体质感：WebGL 着色器，渲染加 `--gl=angle`，会慢。
 - 已有的 Lottie：`@remotion/lottie`，先确认文件可以商用。

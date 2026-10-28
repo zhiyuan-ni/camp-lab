@@ -3,69 +3,56 @@
   "episode": 1,
   "title": "Why is it raining inside my tent?",
   "subtitle": "The science of tent condensation",
+  "stage": "tent",
   "segments": [
     {
       "id": "s01",
-      "scene": "intro",
-      "narration": "You wake up, and the inside of your tent is dripping wet. Did it leak overnight?",
-      "props": { "hook": "Did your tent leak?" }
+      "scene": "stage",
+      "narration": "You wake up, and your tent is dripping. Did it rain overnight?",
+      "props": { "shot": "hook", "heading": "Did it leak?" }
     },
     {
       "id": "s02",
-      "scene": "title",
-      "narration": "Probably not. That water didn't come in from outside. It came from you.",
-      "props": { "kicker": "The truth", "heading": "It's condensation, not a leak", "sub": "The water comes from inside" }
+      "scene": "stage",
+      "narration": "Not a single drop fell last night. So where did all this water come from? Let’s rewind.",
+      "padAfter": 1.2,
+      "props": { "shot": "rewind", "heading": "Clear skies all night" }
     },
     {
       "id": "s03",
-      "scene": "stat",
-      "narration": "Over one night, a sleeping adult releases somewhere between half a liter and a full liter of water vapor, just from breathing and sweating.",
-      "props": { "value": "0.5–1", "unit": "L", "label": "Water vapor one person releases overnight", "note": "Roughly one or two water bottles" }
+      "scene": "stage",
+      "narration": "Every breath you let out is warm and full of water vapor. Add what your skin gives off, and one sleeper puts about a cup of water into the air overnight.",
+      "props": { "shot": "source", "heading": "About 1 cup", "sub": "per person, per night" }
     },
     {
       "id": "s04",
-      "scene": "diagram",
-      "narration": "That vapor makes the air in your tent warm and humid. The warm air rises and hits the rainfly, which the night air has cooled down. Once the fabric drops below the air's dew point, the vapor turns back into water droplets.",
-      "props": {
-        "diagram": "condensation",
-        "heading": "How condensation forms",
-        "steps": ["You breathe out warm, moist air", "It rises and hits the cold fly", "Below the dew point, it turns to water"]
-      }
+      "scene": "stage",
+      "narration": "Meanwhile, on a clear night, the fly is losing heat straight to the open sky. So it ends up colder than the air inside your tent.",
+      "props": { "shot": "coldfly", "heading": "Cold fly, warm air" }
     },
     {
       "id": "s05",
-      "scene": "diagram",
-      "narration": "The dew point is the temperature where water vapor starts turning into liquid. The more humid the air, the higher the dew point, and the easier it is to get condensation.",
-      "props": {
-        "diagram": "flow",
-        "heading": "Key idea: the dew point",
-        "steps": ["Warm, moist air", "Hits a cold surface", "Cools below dew point", "Turns to water"]
-      }
+      "scene": "stage",
+      "narration": "When that moist air touches the cold fabric, it drops below its dew point, and the vapor turns back into liquid water. That’s your rain.",
+      "props": { "shot": "dew", "heading": "Dew point" }
     },
     {
       "id": "s06",
-      "scene": "comparison",
-      "narration": "Calm, damp nights are the worst, especially near water with every door zipped shut. A light breeze, higher ground, and open vents make a huge difference.",
-      "props": {
-        "heading": "When is it worst?",
-        "left": { "label": "More condensation", "tone": "bad", "points": ["Calm, damp nights", "Low ground near water", "Doors zipped shut"] },
-        "right": { "label": "Less condensation", "tone": "good", "points": ["A light breeze", "Higher, open ground", "Vents wide open"] }
-      }
+      "scene": "stage",
+      "narration": "It’s worst on calm nights, in low spots near water, with every door zipped shut.",
+      "props": { "shot": "worst", "heading": "When it’s worst" }
     },
     {
       "id": "s07",
-      "scene": "checklist",
-      "narration": "So here's your checklist. Open the top vents. Keep the fly taut so it doesn't touch the inner tent. Skip low spots by rivers and lakes. Keep wet gear out of the inner tent. And wipe the fly dry before you pack it.",
-      "props": {
-        "heading": "Beat condensation",
-        "items": ["Open the top vents", "Keep the fly taut", "Avoid low spots near water", "Keep wet gear outside", "Wipe it dry before packing"]
-      }
+      "scene": "stage",
+      "narration": "So give that vapor a way out. Open the vents, keep the fly tight, and pitch on higher, drier ground, under trees if you can.",
+      "props": { "shot": "fix", "heading": "Open the vents" }
     },
     {
       "id": "s08",
-      "scene": "outro",
-      "narration": "Follow CAMP LAB for more camping science. Next time: how does a sleeping bag actually keep you warm?",
-      "props": { "cta": "Follow for more camping science", "next": "How do sleeping bags keep you warm?" }
+      "scene": "stage",
+      "narration": "It was never a leak. It was your breath. Follow CAMP LAB for more camping science.",
+      "props": { "shot": "payoff", "heading": "Let it breathe" }
     }
   ]
 }

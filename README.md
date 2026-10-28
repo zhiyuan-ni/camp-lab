@@ -62,6 +62,7 @@
 | `comparison` | 左右对比（竖屏上下排） | `heading?` `left{label,points[],tone}` `right{…}` |
 | `checklist` | 要点清单，逐条打勾 | `heading` `items[]` |
 | `outro` | 片尾 + 下期预告 | `cta?` `next?` |
+| `stage` | 3D 舞台上的一个镜头（需要脚本顶层写 `"stage"`），这一段只放屏幕标题 | `shot` `heading?` `sub?` |
 
 `tone` 可选 `good` / `bad` / `neutral`。
 
@@ -74,6 +75,16 @@
 
 新主题需要专属原理图（比如睡袋蓬松层、营地布局俯视图）时，参考 `src/diagrams/Condensation.tsx` 写一个 SVG 组件并注册即可。
 组件会拿到 `progress`（旁白进度 0→1）和 `activeStep`，用来让画面跟着讲解走。
+
+### 3D 舞台
+
+脚本顶层写 `"stage": "tent"` 后，整集共用一块 three.js 画布（`@remotion/three`），从第一帧到最后一帧不卸载，镜头一镜到底。
+每个 `stage` 段的 `shot` 指向 `src/stages/<stage>/shots.ts` 里的一个镜头函数：输入本段进度 `p`（0→1），输出相机和整个舞台的状态（天色、水珠、粒子……）。
+相邻镜头的首尾位置要对上，画面才连续。还没写的镜头名会先用舞台的 `fallback` 画面。
+
+- `tent`：一顶双层帐篷、一个睡着的人、一小块圆形草地；天色从深夜到清晨可调。镜头：`hook`、`rewind`。
+
+渲染 3D 时要加 `--gl=angle`（本机有显卡）或 `--gl=swangle`（云端没有显卡）。
 
 ## 目录结构
 
@@ -98,6 +109,7 @@ src/
   Episode.tsx                  按时间轴拼接场景 + 配音 + 字幕
   scenes/                      可复用场景组件
   diagrams/                    原理图解组件
+  stages/                      3D 舞台：世界、镜头、跟着 3D 的 2D 读数
   components/                  背景、Logo、字幕等
   lib/                         脚本 schema、时间轴与字幕计算、动画工具
 scripts/

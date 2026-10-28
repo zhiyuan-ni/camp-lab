@@ -69,6 +69,17 @@ export const segmentSchema = z.discriminatedUnion("scene", [
   }),
   z.object({
     ...base,
+    /** 3D 舞台上的一个镜头：画面由整集共用的 3D 场景（episode.stage）按 shot 名算出，这里只放屏幕文字 */
+    scene: z.literal("stage"),
+    props: z.object({
+      /** 对应 src/stages/<stage>/shots.ts 里的镜头名 */
+      shot: z.string(),
+      heading: z.string().optional(),
+      sub: z.string().optional(),
+    }),
+  }),
+  z.object({
+    ...base,
     scene: z.literal("outro"),
     props: z.object({
       cta: z.string().optional(),
@@ -82,6 +93,8 @@ export const episodeSchema = z.object({
   episode: z.number().int().positive(),
   title: z.string(),
   subtitle: z.string().optional(),
+  /** 可选：整集共用的 3D 舞台，对应 src/stages/index.ts 里注册的名字。用了它，stage 段的画面都在这个舞台上拍 */
+  stage: z.string().optional(),
   /** 可选：覆盖 .env 里的默认音色 */
   voiceId: z.string().optional(),
   /** 可选：public/ 下的背景音乐路径，例如 music/calm.mp3 */
