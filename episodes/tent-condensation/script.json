@@ -15,7 +15,7 @@
       "id": "s02",
       "scene": "stage",
       "narration": "Not a single drop fell last night. So where did all this water come from? Let’s rewind.",
-      "padAfter": 1.2,
+      "padAfter": 1.6,
       "props": { "shot": "rewind", "heading": "Clear skies all night" }
     },
     {

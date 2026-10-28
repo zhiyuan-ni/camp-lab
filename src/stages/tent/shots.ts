@@ -72,7 +72,8 @@ const rewind: Shot<TentState> = {
     // 刚穿出篷布时离后墙很近、满屏橙色：开头快速拉远
     const out = seg(p, 0, 0.2, Easing.out(Easing.cubic));
     const swing = seg(p, 0.16, 1);
-    const back = seg(p, 0.5, 0.97);
+    // 倒带等旁白说到 “Let’s rewind” 才开始
+    const back = seg(p, 0.7, 0.98);
     let camera: CameraPose;
     if (p < 0.2) camera = exitAt(lerp(HOOK_EXIT_END, 1, out));
     else {
@@ -88,7 +89,7 @@ const rewind: Shot<TentState> = {
       day: 1 - back,
       drops: 1 - back,
       inner: seg(p, 0.05, 0.3),
-      clock: p > 0.46 ? { hours: lerp(30 + 40 / 60, 22.5, back), show: seg(p, 0.46, 0.56) } : null,
+      clock: p > 0.66 ? { hours: lerp(30 + 40 / 60, 22.5, back), show: seg(p, 0.66, 0.74) } : null,
     };
   },
 };
