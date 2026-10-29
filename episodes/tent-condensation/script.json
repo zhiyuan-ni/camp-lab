@@ -34,19 +34,19 @@
       "id": "s05",
       "scene": "stage",
       "narration": "When that moist air touches the cold fabric, it drops below its dew point, and the vapor turns back into liquid water. That’s your rain.",
-      "props": { "shot": "dew", "heading": "Dew point" }
+      "props": { "shot": "dew", "heading": "Back to water" }
     },
     {
       "id": "s06",
       "scene": "stage",
       "narration": "It’s worst on calm nights, in low spots near water, with every door zipped shut.",
-      "props": { "shot": "worst", "heading": "When it’s worst" }
+      "props": { "shot": "worst" }
     },
     {
       "id": "s07",
       "scene": "stage",
       "narration": "So give that vapor a way out. Open the vents, keep the fly tight, and pitch on higher, drier ground, under trees if you can.",
-      "props": { "shot": "fix", "heading": "Open the vents" }
+      "props": { "shot": "fix" }
     },
     {
       "id": "s08",

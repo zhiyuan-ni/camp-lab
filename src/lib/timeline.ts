@@ -15,6 +15,8 @@ const MIN_SCENE_SECONDS: Partial<Record<Segment["scene"], number>> = {
 };
 
 export type Caption = { text: string; start: number; end: number };
+/** 旁白里每个词开口的时刻（秒，相对本段开头，已含 LEAD_IN）。镜头用它把动作对到词上 */
+export type Cue = { word: string; start: number };
 
 export type TimedSegment = {
   segment: Segment;
@@ -25,6 +27,7 @@ export type TimedSegment = {
   narrationFrames: number;
   audio: string | null;
   captions: Caption[];
+  cues: Cue[];
 };
 
 export type Timeline = { segments: TimedSegment[]; durationInFrames: number; hasAudio: boolean };
@@ -54,11 +57,34 @@ export const buildTimeline = (episode: Episode, voiceover: Voiceover | null, fps
       narrationFrames: Math.ceil(speech * fps),
       audio: vo?.file ?? null,
       captions: buildCaptions(segment.narration, speech, vo?.alignment),
+      cues: buildCues(segment.narration, speech, vo?.alignment).map((c) => ({ ...c, start: c.start + Math.round(LEAD_IN * fps) / fps })),
     };
     cursor += durationInFrames;
     return timed;
   });
   return { segments, durationInFrames: Math.max(cursor, 1), hasAudio };
+};
+
+/** 文字里第 index 个字符的开口 / 收口时刻。有 ElevenLabs 字符时间戳时用真实时间，否则按字符数比例分配 */
+const charTimer = (text: string, duration: number, alignment?: Alignment) => {
+  const useAlignment = alignment && alignment.characters.join("") === text;
+  const nonSpaceBefore = (index: number) => text.slice(0, index).replace(/\s/g, "").length;
+  const totalNonSpace = Math.max(nonSpaceBefore(text.length), 1);
+  return (index: number, edge: "start" | "end"): number => {
+    if (useAlignment) {
+      const arr = edge === "start" ? alignment.character_start_times_seconds : alignment.character_end_times_seconds;
+      return arr[Math.min(Math.max(index, 0), arr.length - 1)];
+    }
+    return (nonSpaceBefore(edge === "start" ? index : index + 1) / totalNonSpace) * duration;
+  };
+};
+
+/** 词的比较只看字母数字：“That’s” 和 "thats" 是同一个词 */
+export const normalizeWord = (w: string) => w.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+
+export const buildCues = (text: string, duration: number, alignment?: Alignment): Cue[] => {
+  const timeAt = charTimer(text, duration, alignment);
+  return [...text.matchAll(/\S+/g)].map((m) => ({ word: normalizeWord(m[0]), start: timeAt(m.index!, "start") }));
 };
 
 /** 每行字幕最多几个词 */
@@ -112,16 +138,7 @@ export const buildCaptions = (text: string, duration: number, alignment?: Alignm
   }
   if (open) lines.push(open.words);
 
-  const useAlignment = alignment && alignment.characters.join("") === text;
-  const nonSpaceBefore = (index: number) => text.slice(0, index).replace(/\s/g, "").length;
-  const totalNonSpace = Math.max(nonSpaceBefore(text.length), 1);
-  const timeAt = (index: number, edge: "start" | "end"): number => {
-    if (useAlignment) {
-      const arr = edge === "start" ? alignment.character_start_times_seconds : alignment.character_end_times_seconds;
-      return arr[Math.min(Math.max(index, 0), arr.length - 1)];
-    }
-    return (nonSpaceBefore(edge === "start" ? index : index + 1) / totalNonSpace) * duration;
-  };
+  const timeAt = charTimer(text, duration, alignment);
 
   return lines.map((l) => ({
     text: l.map((w) => w.word).join(" ").replace(/[,;:—]+$/, ""),

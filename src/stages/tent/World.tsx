@@ -1,15 +1,13 @@
-import React, { useLayoutEffect, useMemo, useRef } from "react";
+import React, { useLayoutEffect, useMemo } from "react";
 import { random } from "remotion";
 import * as THREE from "three";
-import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import { useThree } from "@react-three/fiber";
+import { brand } from "../../brand";
 import { clamp01, lerp } from "../math";
-import {
-  EAVE_Y, FLY_LEN, FLY_TH, H2, IH, ISLAND_R, IW, TL, TW, W2,
-  dropletLayout, extrudeX, lambdaShape, netTexture, triangleShape, underFly,
-} from "./geometry";
+import { LAB_MASK_GLSL, labDim, labify, labUniforms, scanHeight, toOutput } from "../lab";
+import { ISLAND_R } from "./geometry";
 import type { TentState } from "./state";
-import { BIG_DROP, bagTopAt } from "./state";
+import { POND, groundY } from "./state";
+import { Tent } from "./Tent";
 
 const C = (hex: number) => new THREE.Color(hex);
 
@@ -32,6 +30,10 @@ const sunDir = (day: number) => {
   return new THREE.Vector3(Math.cos(elev) * Math.cos(az), Math.sin(elev), Math.cos(elev) * Math.sin(az)).normalize();
 };
 
+/** 扫描面从这么高扫到这么低：天空按“离相机 12 米处”的高度算，所以扫描线也会扫过天空 */
+const SCAN_TOP = 2.7;
+const SCAN_BOTTOM = -0.7;
+
 const Sky: React.FC<{ day: number }> = ({ day }) => {
   const mat = useMemo(
     () =>
@@ -39,10 +41,29 @@ const Sky: React.FC<{ day: number }> = ({ day }) => {
         side: THREE.BackSide,
         depthWrite: false,
         toneMapped: false,
-        uniforms: { top: { value: new THREE.Color() }, mid: { value: new THREE.Color() }, hor: { value: new THREE.Color() } },
+        uniforms: {
+          ...labUniforms,
+          top: { value: new THREE.Color() },
+          mid: { value: new THREE.Color() },
+          hor: { value: new THREE.Color() },
+          // 和其他天空色一样直接当输出值用（不做色彩空间换算），保持 s01–s02 定下的样子
+          labTop: { value: new THREE.Color(brand.lab.sky.top) },
+          labMid: { value: new THREE.Color(brand.lab.sky.mid) },
+          labHor: { value: new THREE.Color(brand.lab.sky.hor) },
+        },
         vertexShader: "varying vec3 vp; void main(){ vp = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }",
-        fragmentShader:
-          "uniform vec3 top, mid, hor; varying vec3 vp; void main(){ float h = clamp(vp.y, 0., 1.); vec3 c = mix(hor, mid, smoothstep(0., .2, h)); c = mix(c, top, smoothstep(.2, .75, h)); gl_FragColor = vec4(c, 1.); }",
+        fragmentShader: `
+          uniform vec3 top, mid, hor, labTop, labMid, labHor;
+          varying vec3 vp;
+          ${LAB_MASK_GLSL}
+          void main(){
+            float h = clamp(vp.y, 0., 1.);
+            vec3 c = mix(hor, mid, smoothstep(0., .2, h)); c = mix(c, top, smoothstep(.2, .75, h));
+            vec3 l = mix(labHor, labMid, smoothstep(0., .18, h)); l = mix(l, labTop, smoothstep(.18, .7, h));
+            float y = cameraPosition.y + vp.y * 12.;
+            c = mix(c, l, labMask(y)) + uScanColor * scanBand(y);
+            gl_FragColor = vec4(c, 1.);
+          }`,
       }),
     [],
   );
@@ -96,15 +117,16 @@ const Lights: React.FC<{ day: number }> = ({ day }) => {
 };
 
 // ---------------------------------------------------------------- 小岛：草地、土层、草丛、松树、石头
-const mat = (hex: number, extra: THREE.MeshStandardMaterialParameters = {}) =>
-  new THREE.MeshStandardMaterial({ color: hex, roughness: 0.85, flatShading: true, ...extra });
+/** 低多边形材质；Lab View 里压暗成深海军蓝 */
+export const envMat = (hex: number, extra: THREE.MeshStandardMaterialParameters = {}) =>
+  labify(new THREE.MeshStandardMaterial({ color: hex, roughness: 0.85, flatShading: true, ...extra }), { color: labDim(hex) });
 
-const Pine: React.FC<{ x: number; z: number; s: number; i: number }> = ({ x, z, s, i }) => {
+const Pine: React.FC<{ x: number; z: number; s: number; i: number; y: number }> = ({ x, z, s, i, y }) => {
   const col = [0x2f6b4a, 0x245840, 0x356f4c][i % 3];
-  const leaves = useMemo(() => mat(col), [col]);
-  const trunk = useMemo(() => mat(0x6e4a2e), []);
+  const leaves = useMemo(() => envMat(col), [col]);
+  const trunk = useMemo(() => envMat(0x6e4a2e), []);
   return (
-    <group position={[x, 0, z]} rotation={[0, random(`pine-${i}`) * 6, 0]}>
+    <group position={[x, y, z]} rotation={[0, random(`pine-${i}`) * 6, 0]}>
       <mesh castShadow receiveShadow material={trunk} position={[0, 0.3 * s, 0]}>
         <cylinderGeometry args={[0.09 * s, 0.13 * s, 0.6 * s, 6]} />
       </mesh>
@@ -121,34 +143,46 @@ const Pine: React.FC<{ x: number; z: number; s: number; i: number }> = ({ x, z, 
   );
 };
 
-const Tufts: React.FC = () => {
+type Blade = { x: number; z: number; h: number; q: THREE.Quaternion; c: number };
+const BLADES: Blade[] = (() => {
+  const out: Blade[] = [];
+  for (let i = 0; i < 320; i++) {
+    const a = random(`tuft-a-${i}`) * Math.PI * 2;
+    const r = Math.sqrt(random(`tuft-r-${i}`)) * (ISLAND_R - 0.3);
+    const x = Math.cos(a) * r;
+    const z = Math.sin(a) * r;
+    if (Math.abs(x) < 1.75 && Math.abs(z) < 1.45) continue; // 帐篷底下不长草
+    for (let k = 0; k < 4; k++) {
+      const h = 0.14 + random(`tuft-h-${i}-${k}`) * 0.18;
+      const q = new THREE.Quaternion().setFromEuler(new THREE.Euler((random(`tuft-rx-${i}-${k}`) - 0.5) * 0.6, 0, (random(`tuft-rz-${i}-${k}`) - 0.5) * 0.6));
+      out.push({ x: x + (random(`tuft-dx-${i}-${k}`) - 0.5) * 0.1, z: z + (random(`tuft-dz-${i}-${k}`) - 0.5) * 0.1, h, q, c: k % 3 });
+    }
+  }
+  return out;
+})();
+
+const Tufts: React.FC<{ dip: number; pond: number }> = ({ dip, pond }) => {
   const meshes = useMemo(() => {
     const cols = [0x4a8442, 0x7cbf63, 0x6aa84f];
     const blade = new THREE.ConeGeometry(0.025, 1, 4);
     blade.translate(0, 0.5, 0);
-    const per: THREE.Matrix4[][] = [[], [], []];
-    const m = new THREE.Matrix4();
-    const q = new THREE.Quaternion();
-    for (let i = 0; i < 320; i++) {
-      const a = random(`tuft-a-${i}`) * Math.PI * 2;
-      const r = Math.sqrt(random(`tuft-r-${i}`)) * (ISLAND_R - 0.3);
-      const x = Math.cos(a) * r;
-      const z = Math.sin(a) * r;
-      if (Math.abs(x) < 1.75 && Math.abs(z) < 1.45) continue; // 帐篷底下不长草
-      for (let k = 0; k < 4; k++) {
-        const h = 0.14 + random(`tuft-h-${i}-${k}`) * 0.18;
-        q.setFromEuler(new THREE.Euler((random(`tuft-rx-${i}-${k}`) - 0.5) * 0.6, 0, (random(`tuft-rz-${i}-${k}`) - 0.5) * 0.6));
-        m.compose(new THREE.Vector3(x + (random(`tuft-dx-${i}-${k}`) - 0.5) * 0.1, 0, z + (random(`tuft-dz-${i}-${k}`) - 0.5) * 0.1), q, new THREE.Vector3(1, h, 1));
-        per[k % 3].push(m.clone());
-      }
-    }
-    return per.map((list, c) => {
-      const im = new THREE.InstancedMesh(blade, mat(cols[c]), list.length);
-      list.forEach((mm, j) => im.setMatrixAt(j, mm));
+    return cols.map((col, c) => {
+      const im = new THREE.InstancedMesh(blade, envMat(col), BLADES.filter((b) => b.c === c).length);
       im.receiveShadow = true;
       return im;
     });
   }, []);
+  // 草跟着地面走：低洼时一起沉下去，水塘里的草没进水里
+  useLayoutEffect(() => {
+    const m = new THREE.Matrix4();
+    const idx = [0, 0, 0];
+    for (const b of BLADES) {
+      const wet = 1 - pond * clamp01(1.2 - Math.hypot(b.x - POND.x, b.z - POND.z) / POND.r);
+      m.compose(new THREE.Vector3(b.x, groundY(b.x, b.z, dip, pond), b.z), b.q, new THREE.Vector3(1, b.h * Math.max(wet, 0.001), 1));
+      meshes[b.c].setMatrixAt(idx[b.c]++, m);
+    }
+    meshes.forEach((im) => (im.instanceMatrix.needsUpdate = true));
+  }, [meshes, dip, pond]);
   return (
     <>
       {meshes.map((m, i) => (
@@ -158,23 +192,120 @@ const Tufts: React.FC = () => {
   );
 };
 
-const Island: React.FC = () => {
-  const m = useMemo(() => ({ grass: mat(0x5fa04e), soil: mat(0x8a5a3b), deep: mat(0x5e3c2a), rock: mat(0x7c7f86), rock2: mat(0x9a8f80) }), []);
-  const rocks: [number, number, number][] = [[2.6, -2.2, 1.2], [3.1, -1.5, 0.7], [-2.4, 2.6, 0.9], [3.4, 2.2, 0.8]];
+/** 草地顶面：细分的圆盘，顶点高度由 groundY 算，低洼和水塘都是它变形出来的 */
+const GroundTop: React.FC<{ dip: number; pond: number; material: THREE.Material }> = ({ dip, pond, material }) => {
+  const { geo, base } = useMemo(() => {
+    const g = new THREE.RingGeometry(0, ISLAND_R, 72, 24);
+    g.rotateX(-Math.PI / 2);
+    return { geo: g, base: (g.attributes.position.array as Float32Array).slice() };
+  }, []);
+  useLayoutEffect(() => {
+    const pos = geo.attributes.position.array as Float32Array;
+    for (let i = 0; i < pos.length; i += 3) pos[i + 1] = groundY(base[i], base[i + 2], dip, pond);
+    geo.attributes.position.needsUpdate = true;
+    geo.computeVertexNormals();
+  }, [geo, base, dip, pond]);
+  return <mesh geometry={geo} material={material} receiveShadow />;
+};
+
+const Pond: React.FC<{ pond: number; dip: number }> = ({ pond, dip }) => {
+  const water = useMemo(
+    () => labify(new THREE.MeshStandardMaterial({ color: 0x3a6f9e, roughness: 0.08, metalness: 0.25, emissive: 0x24486e, emissiveIntensity: 0.45, flatShading: true }), { color: labDim(0x3a6f9e, 0.3) }),
+    [],
+  );
+  if (pond <= 0.001) return null;
+  const y = groundY(POND.x, POND.z, dip, 0) - 0.05;
+  return (
+    <mesh material={water} position={[POND.x, y, POND.z]} rotation={[-Math.PI / 2, 0, 0.3]} scale={Math.sqrt(pond)}>
+      <circleGeometry args={[POND.r * 1.02, 14]} />
+    </mesh>
+  );
+};
+
+/** 一棵阔叶树：从地里长出来，树冠罩在帐篷上方 */
+const TREE = { x: -0.55, z: -1.9 };
+const Tree: React.FC<{ grow: number; y: number }> = ({ grow, y }) => {
+  const m = useMemo(() => ({ trunk: envMat(0x6e4a2e), a: envMat(0x3f8a4a), b: envMat(0x4f9a52) }), []);
+  if (grow <= 0.001) return null;
+  // 先长树干，再鼓出树冠
+  const trunk = clamp01(grow / 0.55);
+  const crown = clamp01((grow - 0.3) / 0.7);
+  const pop = crown < 1 ? crown * (1 + 0.25 * Math.sin(crown * Math.PI)) : 1;
+  // 树冠往帐篷那边（+z）伸，罩在外帐上方
+  const blobs: [number, number, number, number, THREE.Material][] = [
+    [0.15, 2.3, 0.75, 0.85, m.a],
+    [-0.55, 2.1, 0.35, 0.7, m.b],
+    [0.8, 2.05, 1.05, 0.62, m.b],
+    [0.1, 2.75, 0.35, 0.55, m.a],
+    [-0.2, 2.15, 1.3, 0.55, m.a],
+  ];
+  return (
+    <group position={[TREE.x, y, TREE.z]}>
+      <mesh material={m.trunk} castShadow position={[0, 1.0 * trunk, 0]} scale={[1, trunk, 1]}>
+        <cylinderGeometry args={[0.09, 0.15, 2.0, 7]} />
+      </mesh>
+      {/* 一根斜枝伸向帐篷 */}
+      <mesh material={m.trunk} castShadow position={[0.15, 1.65, 0.45]} rotation={[0.8, 0, -0.3]} scale={[1, trunk, 1]}>
+        <cylinderGeometry args={[0.04, 0.07, 0.9, 6]} />
+      </mesh>
+      {blobs.map(([x, by, z, r, mat], i) => (
+        <mesh key={i} material={mat} castShadow receiveShadow position={[x, by, z]} scale={r * pop} rotation={[i, i * 2, 0]}>
+          <icosahedronGeometry args={[1, 0]} />
+        </mesh>
+      ))}
+    </group>
+  );
+};
+
+/** Lab View 的“实验台”：地面网格和发光的岛缘，只在扫描线扫过的地方出现 */
+const LabFloor: React.FC = () => {
+  const { grid, ring } = useMemo(() => {
+    const g = new THREE.GridHelper(ISLAND_R * 2, 18, brand.lab.grid, brand.lab.grid);
+    const gm = g.material as THREE.LineBasicMaterial;
+    gm.transparent = true;
+    gm.opacity = 0;
+    gm.depthWrite = false;
+    labify(gm, { color: brand.lab.grid, alpha: 0.5, shade: 0 });
+    g.position.y = 0.006;
+    const r = new THREE.Mesh(
+      new THREE.RingGeometry(ISLAND_R - 0.02, ISLAND_R + 0.035, 120),
+      labify(new THREE.MeshBasicMaterial({ color: 0x3d6bc2, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }), { color: 0x4f86e8, alpha: 1, shade: 0 }),
+    );
+    r.rotation.x = -Math.PI / 2;
+    r.position.y = 0.012;
+    return { grid: g, ring: r };
+  }, []);
   return (
     <>
+      <primitive object={grid} />
+      <primitive object={ring} />
+    </>
+  );
+};
+
+const Island: React.FC<{ state: TentState }> = ({ state }) => {
+  const { dip, pond } = state;
+  const m = useMemo(() => ({ grass: envMat(0x5fa04e), soil: envMat(0x8a5a3b), deep: envMat(0x5e3c2a), rock: envMat(0x7c7f86), rock2: envMat(0x9a8f80) }), []);
+  const rocks: [number, number, number][] = [[2.6, -2.2, 1.2], [3.1, -1.5, 0.7], [-2.4, 2.6, 0.9], [3.4, 2.2, 0.8]];
+  const pines = [[-3.0, -1.9, 1.35], [-1.6, -3.4, 1.1], [-3.5, -0.4, 0.95], [0.8, -3.7, 0.85]] as const;
+  return (
+    <>
+      <GroundTop dip={dip} pond={pond} material={m.grass} />
       <mesh receiveShadow material={m.grass} position={[0, -0.08, 0]}>
-        <cylinderGeometry args={[ISLAND_R, ISLAND_R - 0.05, 0.16, 64]} />
+        <cylinderGeometry args={[ISLAND_R, ISLAND_R - 0.05, 0.16, 64, 1, true]} />
       </mesh>
       <mesh receiveShadow material={m.soil} position={[0, -0.6, 0]}>
-        <cylinderGeometry args={[ISLAND_R - 0.04, ISLAND_R - 0.5, 0.9, 64]} />
+        {/* 不要顶盖：低洼时草地顶面会沉到它下面 */}
+        <cylinderGeometry args={[ISLAND_R - 0.04, ISLAND_R - 0.5, 0.9, 64, 1, true]} />
       </mesh>
       <mesh receiveShadow material={m.deep} position={[0, -1.4, 0]}>
         <cylinderGeometry args={[ISLAND_R - 0.5, ISLAND_R - 1.3, 0.7, 64]} />
       </mesh>
-      <Tufts />
-      {([[-3.0, -1.9, 1.35], [-1.6, -3.4, 1.1], [-3.5, -0.4, 0.95], [0.8, -3.7, 0.85]] as const).map(([x, z, s], i) => (
-        <Pine key={i} x={x} z={z} s={s} i={i} />
+      <LabFloor />
+      <Tufts dip={dip} pond={pond} />
+      <Pond pond={pond} dip={dip} />
+      {pines.map(([x, z, s], i) => (
+        <Pine key={i} x={x} z={z} s={s} i={i} y={groundY(x, z, dip, pond)} />
       ))}
       {rocks.map(([x, z, s], i) => (
         <mesh
@@ -182,263 +313,34 @@ const Island: React.FC = () => {
           castShadow
           receiveShadow
           material={i % 2 ? m.rock2 : m.rock}
-          position={[x, 0.08 * s, z]}
+          position={[x, 0.08 * s + groundY(x, z, dip, pond), z]}
           rotation={[0, random(`rock-${i}`) * 6, 0]}
           scale={[1.2 * s, 0.65 * s, 1.1 * s]}
         >
           <dodecahedronGeometry args={[0.3, 0]} />
         </mesh>
       ))}
+      <Tree grow={state.tree} y={groundY(TREE.x, TREE.z, dip, pond)} />
     </>
   );
 };
 
-
-// ---------------------------------------------------------------- 篷布细节：接缝、卷起的门帘、通风口
-const SLOPE_RUN = W2;
-const SLOPE_RISE = H2 - EAVE_Y;
-const SLOPE_LEN = Math.hypot(SLOPE_RUN, SLOPE_RISE);
-const SLOPE_ANGLE = Math.atan2(SLOPE_RISE, SLOPE_RUN);
-/** 外帐外表面上的点（v：0 檐口，1 屋脊）和朝外的法线 */
-const onFly = (x: number, v: number, side: 1 | -1) => ({
-  p: new THREE.Vector3(x, EAVE_Y + SLOPE_RISE * v, side * W2 * (1 - v)),
-  n: new THREE.Vector3(0, SLOPE_RUN, side * SLOPE_RISE).normalize(),
-});
-
-const FlyDetails: React.FC<{ fly: THREE.Material; ventOpen: number; day: number }> = ({ fly, ventOpen, day }) => {
-  const m = useMemo(
-    () => ({
-      seam: new THREE.MeshStandardMaterial({ color: 0xf47a45, roughness: 0.6, side: THREE.DoubleSide, flatShading: true, emissive: 0xff7a3a }),
-      roll: new THREE.MeshStandardMaterial({ color: 0xd9552a, roughness: 0.75, flatShading: true }),
-      strap: new THREE.MeshStandardMaterial({ color: 0x2b2b2b, roughness: 0.6 }),
-      dark: new THREE.MeshBasicMaterial({ color: 0x1a0d08 }),
-      steel: new THREE.MeshStandardMaterial({ color: 0xbbbbbb, metalness: 0.8, roughness: 0.35 }),
-    }),
-    [],
-  );
-  // 接缝和篷布一样被晨光透亮，只是稍浅一点，不会在帐篷里看成一根根黑条
-  m.seam.emissiveIntensity = 0.34 * day;
-  const seams: React.ReactNode[] = [];
-  for (const side of [1, -1] as const) {
-    for (const x of [-FLY_LEN / 6, FLY_LEN / 6]) {
-      const { p, n } = onFly(x, 0.5, side);
-      p.addScaledVector(n, -FLY_TH / 2);
-      seams.push(
-        <mesh key={`${side}${x}`} material={m.seam} position={p} rotation={[side * SLOPE_ANGLE, 0, 0]}>
-          <boxGeometry args={[0.035, FLY_TH + 0.012, SLOPE_LEN]} />
-        </mesh>,
-      );
-    }
-  }
-  // 门帘卷起绑在两边：沿门口两条斜边
-  const rolls = ([1, -1] as const).map((side) => {
-    const a = onFly(FLY_LEN / 2 - 0.05, 0.02, side).p;
-    const b = onFly(FLY_LEN / 2 - 0.05, 0.72, side).p;
-    const n = onFly(0, 0, side).n;
-    const mid = a.clone().add(b).multiplyScalar(0.5).addScaledVector(n, -0.03);
-    const d = b.clone().sub(a);
-    const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize());
-    return (
-      <group key={side} position={mid} quaternion={q}>
-        <mesh material={m.roll} castShadow>
-          <cylinderGeometry args={[0.045, 0.045, d.length(), 10]} />
-        </mesh>
-        {[-0.25, 0.25].map((t) => (
-          <mesh key={t} material={m.strap} position={[0, t * d.length(), 0]}>
-            <cylinderGeometry args={[0.05, 0.05, 0.025, 10]} />
-          </mesh>
-        ))}
-      </group>
-    );
-  });
-  // 顶部通风口：屋脊下方、帐篷后段两面各一个，罩子绕上边缘撑开
-  const vents = ([1, -1] as const).map((side) => {
-    const { p } = onFly(-FLY_LEN / 2 + 0.42, 0.8, side);
-    return (
-      <group key={side} position={p} rotation={[side * SLOPE_ANGLE, 0, 0]}>
-        <mesh material={m.dark} position={[0, 0.002, 0]}>
-          <boxGeometry args={[0.34, 0.004, 0.12]} />
-        </mesh>
-        {/* 铰链在靠屋脊的一边（局部 -z 一侧朝屋脊） */}
-        <group position={[0, 0.004, -side * 0.08]} rotation={[-side * (0.12 + 0.75 * ventOpen), 0, 0]}>
-          <mesh material={fly} position={[0, 0.006, side * 0.09]} castShadow>
-            <boxGeometry args={[0.4, 0.012, 0.2]} />
-          </mesh>
-        </group>
-      </group>
-    );
-  });
-  // 地钉
-  const stakes = [];
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) stakes.push(
-    <mesh key={`${sx}${sz}`} material={m.steel} position={[sx * (FLY_LEN / 2 + 1.0), 0.05, sz * 0.9]}>
-      <cylinderGeometry args={[0.012, 0.006, 0.12, 6]} />
-    </mesh>,
-  );
-  return (
-    <>
-      {seams}
-      {rolls}
-      {vents}
-      {stakes}
-    </>
-  );
-};
-
-// ---------------------------------------------------------------- 帐篷、睡着的人、凝结水
-const DROPS = dropletLayout(900);
-
-const Tent: React.FC<{ state: TentState }> = ({ state }) => {
-  const gl = useThree((s) => s.gl);
-  const env = useMemo(() => {
-    const pm = new THREE.PMREMGenerator(gl);
-    const t = pm.fromScene(new RoomEnvironment(), 0.04).texture;
-    pm.dispose();
-    return t;
-  }, [gl]);
-  const g = useMemo(
-    () => ({
-      fly: extrudeX(lambdaShape(W2, H2, FLY_TH, EAVE_Y), FLY_LEN),
-      back: extrudeX(triangleShape(W2 - 0.05, EAVE_Y, H2 - 0.03), 0.025),
-      inner: extrudeX(lambdaShape(IW, IH, 0.012, 0.03), TL - 0.2),
-    }),
-    [],
-  );
-  const m = useMemo(
-    () => ({
-      fly: new THREE.MeshStandardMaterial({ color: 0xf06a35, roughness: 0.7, side: THREE.DoubleSide, flatShading: true, emissive: 0xff6a2a, emissiveIntensity: 0 }),
-      inner: new THREE.MeshStandardMaterial({ color: 0xf7e6c4, alphaMap: netTexture(), transparent: true, side: THREE.DoubleSide, depthWrite: false, roughness: 0.9 }),
-      floor: mat(0x3d4a5c),
-      pole: new THREE.MeshStandardMaterial({ color: 0x2b2b2b, metalness: 0.5, roughness: 0.4 }),
-      line: new THREE.MeshBasicMaterial({ color: 0xe8e2d6 }),
-      pad: mat(0x2e8b6e),
-      bag: new THREE.MeshStandardMaterial({ color: 0x3b6fd6, roughness: 0.6 }),
-      pillow: new THREE.MeshStandardMaterial({ color: 0xf4f1ea, roughness: 0.9 }),
-      skin: new THREE.MeshStandardMaterial({ color: 0xf1c29a, roughness: 0.6 }),
-      hair: new THREE.MeshStandardMaterial({ color: 0x3a2a22, roughness: 0.8 }),
-      wet: new THREE.MeshStandardMaterial({ color: 0x2a55b0, roughness: 0.25, transparent: true, depthWrite: false }),
-      drop: new THREE.MeshPhysicalMaterial({ color: 0xe6f6ff, roughness: 0.03, transmission: 1, thickness: 0.04, ior: 1.33, envMap: env, envMapIntensity: 1.0 }),
-      // 主角水珠：反光更亮、带一点冷色，在一片小水珠里一眼能认出来
-      hero: new THREE.MeshPhysicalMaterial({ color: 0xd8f1ff, roughness: 0.0, transmission: 1, thickness: 0.12, ior: 1.33, envMap: env, envMapIntensity: 2.6, attenuationColor: new THREE.Color(0x9fd8ff), attenuationDistance: 0.25, emissive: 0x7fc8ff, emissiveIntensity: 0.12 }),
-    }),
-    [env],
-  );
-  // 晨光透过橙色篷布：用一点自发光假装透光
-  m.fly.emissiveIntensity = 0.28 * state.day;
-  m.inner.opacity = 0.8 * state.inner;
-  m.wet.opacity = 0.55 * state.bigDrop.splash;
-
-  const dropsRef = useRef<THREE.InstancedMesh>(null);
+/** 每帧更新全场共用的扫描 uniform：Lab View 进出就是扫描面上下移动 */
+const Scan: React.FC<{ lab: number }> = ({ lab }) => {
   useLayoutEffect(() => {
-    const im = dropsRef.current;
-    if (!im) return;
-    const mm = new THREE.Matrix4();
-    DROPS.forEach((d, i) => {
-      const k = clamp01((state.drops - d.start) / 0.3);
-      const s = d.r * k;
-      mm.makeScale(s, s * 1.25, s).setPosition(d.pos);
-      im.setMatrixAt(i, mm);
-    });
-    im.instanceMatrix.needsUpdate = true;
-  }, [state.drops]);
-
-  const guy = useMemo(() => {
-    const out: { pos: THREE.Vector3; quat: THREE.Quaternion; len: number }[] = [];
-    for (const sx of [-1, 1])
-      for (const sz of [-1, 1]) {
-        const a = new THREE.Vector3(sx * (FLY_LEN / 2), H2 * 0.85, 0);
-        const b = new THREE.Vector3(sx * (FLY_LEN / 2 + 1.0), 0.02, sz * 0.9);
-        const d = b.clone().sub(a);
-        out.push({ pos: a.clone().add(b).multiplyScalar(0.5), quat: new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize()), len: d.length() });
-      }
-    return out;
-  }, []);
-
-  // 那一颗大水珠：在屋脊附近长大、落下、砸在睡袋上溅开
-  const { grow, fall, splash } = state.bigDrop;
-  const top = underFly(BIG_DROP.x, BIG_DROP.v, 1, 0.03);
-  const BAG_TOP = bagTopAt(top.z);
-  const dropY = fall < 0 ? top.y - 0.045 * grow : lerp(top.y - 0.045, BAG_TOP + 0.04, fall * fall);
-  const dropScale = fall < 0 ? lerp(0.6, 1, grow) : 1;
-  const breathe = 1 + 0.025 * Math.sin((state.time / 4.2) * Math.PI * 2);
-
-  return (
-    <group>
-      {/* 门口照进来的晨光，让篷布从门口往里有明暗过渡 */}
-      <pointLight position={[1.25, 0.7, 0]} color={0xffd2a0} intensity={2.5 * state.day} distance={3.2} decay={1.5} />
-      <mesh geometry={g.fly} material={m.fly} castShadow receiveShadow />
-      <mesh geometry={g.back} material={m.fly} position={[-FLY_LEN / 2, 0, 0]} castShadow />
-      <FlyDetails fly={m.fly} ventOpen={state.ventOpen} day={state.day} />
-      <mesh geometry={g.inner} material={m.inner} visible={state.inner > 0.01} />
-      <mesh material={m.floor} position={[0, 0.04, 0]} receiveShadow>
-        <boxGeometry args={[TL - 0.2, 0.08, TW - 0.24]} />
-      </mesh>
-      {[-1, 1].map((sx) => (
-        <mesh key={sx} material={m.pole} position={[sx * (FLY_LEN / 2 + 0.03), (H2 + 0.05) / 2, 0]} castShadow>
-          <cylinderGeometry args={[0.022, 0.022, H2 + 0.05, 8]} />
-        </mesh>
-      ))}
-      {guy.map((l, i) => (
-        <mesh key={i} material={m.line} position={l.pos} quaternion={l.quat}>
-          <cylinderGeometry args={[0.006, 0.006, l.len, 4]} />
-        </mesh>
-      ))}
-      {/* 睡着的人：头朝门，这样呼出的水汽对着镜头 */}
-      <mesh material={m.pad} position={[0, 0.1, 0]} receiveShadow>
-        <boxGeometry args={[1.95, 0.04, 0.62]} />
-      </mesh>
-      <mesh material={m.bag} position={[-0.12, 0.25, 0]} rotation={[0, 0, Math.PI / 2]} scale={[0.62 * breathe, 1, 1]} castShadow receiveShadow>
-        <capsuleGeometry args={[0.26, 1.25, 8, 18]} />
-      </mesh>
-      <mesh material={m.pillow} position={[0.78, 0.17, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.3, 0.1, 0.44]} />
-      </mesh>
-      <mesh material={m.skin} position={[0.7, 0.33, 0]} castShadow>
-        <sphereGeometry args={[0.14, 24, 16]} />
-      </mesh>
-      <mesh material={m.hair} position={[0.79, 0.35, 0]} scale={[0.7, 1, 0.95]} castShadow>
-        <sphereGeometry args={[0.146, 24, 16]} />
-      </mesh>
-      {/* 凝结水 */}
-      <instancedMesh ref={dropsRef} args={[undefined, undefined, DROPS.length]} material={m.drop} frustumCulled={false}>
-        <sphereGeometry args={[1, 14, 10]} />
-      </instancedMesh>
-      {state.bigDrop.show && splash < 1 && (
-        <mesh material={m.hero} position={[BIG_DROP.x, dropY, top.z]} scale={[0.06 * dropScale, 0.06 * dropScale * (fall < 0 ? 1.2 + 0.35 * grow : 1.7), 0.06 * dropScale]}>
-          <sphereGeometry args={[1, 24, 18]} />
-        </mesh>
-      )}
-      {splash > 0 && (
-        <>
-          <mesh material={m.wet} position={[BIG_DROP.x, BAG_TOP + 0.004, top.z]} rotation={[-Math.PI / 2, 0, 0]} scale={lerp(0.02, 0.09, Math.sqrt(splash))}>
-            <circleGeometry args={[1, 24]} />
-          </mesh>
-          {Array.from({ length: 9 }, (_, i) => {
-            const a = (i / 9) * Math.PI * 2 + random(`splash-${i}`);
-            const v = 0.18 + random(`splash-v-${i}`) * 0.12;
-            const s = splash;
-            return (
-              <mesh
-                key={i}
-                material={m.drop}
-                position={[BIG_DROP.x + Math.cos(a) * v * s, BAG_TOP + 0.02 + (0.35 * s - 0.5 * s * s) * 0.5, top.z + Math.sin(a) * v * s]}
-                scale={0.012 * (1 - s)}
-              >
-                <sphereGeometry args={[1, 10, 8]} />
-              </mesh>
-            );
-          })}
-        </>
-      )}
-    </group>
-  );
+    labUniforms.uScanY.value = scanHeight(lab, SCAN_TOP, SCAN_BOTTOM);
+    labUniforms.uScanGlow.value = lab > 0 && lab < 1 ? 1 : 0;
+    labUniforms.uScanColor.value.copy(toOutput(brand.lab.scan));
+  }, [lab]);
+  return null;
 };
 
 export const World: React.FC<{ state: TentState; vertical: boolean }> = ({ state }) => (
   <>
+    <Scan lab={state.lab} />
     <Sky day={state.day} />
     <Lights day={state.day} />
-    <Island />
+    <Island state={state} />
     <Tent state={state} />
   </>
 );

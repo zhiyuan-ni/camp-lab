@@ -15,6 +15,24 @@ export const brand = {
     good: "#7BD389",
     bad: "#FF7A59",
   },
+  /**
+   * Lab View（“为什么”的部分）：热成像色阶，暖是橙、冷是冰蓝；其余压暗成深海军蓝；
+   * 水汽、热量这类看不见的东西用发光的青色。用法见 src/stages/lab.ts。
+   */
+  lab: {
+    ramp: [
+      [0, "#2E6BFF"],
+      [0.3, "#46B4FF"],
+      [0.55, "#B9C3E6"],
+      [0.75, "#FF9A55"],
+      [1, "#FFC65A"],
+    ] as const,
+    dim: "#0E1A33",
+    sky: { top: "#03060F", mid: "#08112A", hor: "#12204A" },
+    vapor: "#4FE0FF",
+    scan: "#7FE8FF",
+    grid: "#2C4C8A",
+  },
   /** Inter（SIL OFL 1.1），本地 woff2，见 src/fonts.ts 和 LICENSES.md */
   font: `Inter, sans-serif`,
   fontNumber: `Inter, sans-serif`,

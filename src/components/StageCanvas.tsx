@@ -6,30 +6,15 @@ import * as THREE from "three";
 import type { Timeline } from "../lib/timeline";
 import { stages } from "../stages";
 import { evaluateStage } from "../stages/evaluate";
+import { applyPose } from "../stages/project";
 import type { CameraPose } from "../stages/types";
-
-/** 竖屏时把横屏的竖直视角换算成更高的视角，左右少看一点、上下多看一点 */
-const fitFov = (fov: number, aspect: number) => {
-  if (aspect >= 1) return fov;
-  const rad = THREE.MathUtils.degToRad;
-  // 广角近景（帐篷里）收得多一点，免得竖屏上下拉得太变形；远景少收一点，主体不出框
-  const keep = fov > 45 ? 0.62 : 0.82;
-  const hfov = 2 * Math.atan(Math.tan(rad(fov) / 2) * (16 / 9)) * keep;
-  return THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(hfov / 2) / aspect));
-};
 
 /** 每帧把相机摆到镜头算出的位置。在 layout effect 里做，赶在 ThreeCanvas 出图之前 */
 const CameraRig: React.FC<{ pose: CameraPose }> = ({ pose }) => {
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
   const size = useThree((s) => s.size);
   useLayoutEffect(() => {
-    camera.position.set(...pose.pos);
-    camera.lookAt(...pose.look);
-    camera.aspect = size.width / size.height;
-    camera.fov = fitFov(pose.fov, camera.aspect);
-    camera.near = 0.02;
-    camera.far = 400;
-    camera.updateProjectionMatrix();
+    applyPose(camera, pose, size.width, size.height);
   }, [camera, pose, size]);
   return null;
 };

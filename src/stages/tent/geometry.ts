@@ -40,8 +40,8 @@ export const triangleShape = (w: number, y0: number, h: number) => {
 };
 
 /** 把截面沿 x 轴挤出 len，居中 */
-export const extrudeX = (shape: THREE.Shape, len: number) => {
-  const g = new THREE.ExtrudeGeometry(shape, { depth: len, bevelEnabled: false });
+export const extrudeX = (shape: THREE.Shape, len: number, steps = 1) => {
+  const g = new THREE.ExtrudeGeometry(shape, { depth: len, bevelEnabled: false, steps });
   g.translate(0, 0, -len / 2);
   g.rotateY(Math.PI / 2);
   g.computeVertexNormals();
@@ -94,3 +94,26 @@ export const dropletLayout = (n: number) =>
     const start = random(`drop-s-${i}`) * 0.7;
     return { pos: underFly(x, v, side, r * 0.55), r, start };
   });
+
+export const SLOPE_RUN = W2;
+export const SLOPE_RISE = H2 - EAVE_Y;
+export const SLOPE_LEN = Math.hypot(SLOPE_RUN, SLOPE_RISE);
+export const SLOPE_ANGLE = Math.atan2(SLOPE_RISE, SLOPE_RUN);
+/** 外帐外表面上的点（v：0 檐口，1 屋脊）和朝外的法线 */
+export const onFly = (x: number, v: number, side: 1 | -1) => ({
+  p: new THREE.Vector3(x, EAVE_Y + SLOPE_RISE * v, side * W2 * (1 - v)),
+  n: new THREE.Vector3(0, SLOPE_RUN, side * SLOPE_RISE).normalize(),
+});
+
+/** 顶部通风口在两面坡上的位置（帐篷后段、靠屋脊） */
+export const VENT_X = -FLY_LEN / 2 + 0.42;
+export const VENT_V = 0.8;
+
+/**
+ * 外帐松垮时的变形：两根杆子之间屋脊往下塌，坡面往里鼓。
+ * along：沿屋脊方向 0（杆子处）→ 1（中间）；返回 y 和朝中线的 z 偏移。
+ */
+export const sagOffset = (x: number, v: number, sag: number) => {
+  const along = Math.cos((Math.PI * x) / FLY_LEN);
+  return { dy: -sag * 0.075 * along * v, dIn: sag * 0.05 * along * Math.sin(Math.PI * v) };
+};

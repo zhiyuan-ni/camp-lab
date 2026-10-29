@@ -29,7 +29,7 @@ export const EpisodeVideo: React.FC<EpisodeProps> = ({ episode, timeline, showCa
         const Scene = scenes[t.segment.scene] as React.FC<SceneProps<typeof t.segment.scene>>;
         return (
           <Sequence key={t.segment.id} from={t.from} durationInFrames={t.durationInFrames} name={`${t.segment.id} · ${t.segment.scene}`}>
-            <Scene episode={episode} segment={t.segment} narrationStart={t.narrationStart} narrationFrames={t.narrationFrames} />
+            <Scene episode={episode} segment={t.segment} narrationStart={t.narrationStart} narrationFrames={t.narrationFrames} cues={t.cues} />
             {t.audio && (
               <Sequence from={t.narrationStart} layout="none">
                 <Audio src={staticFile(t.audio)} />

@@ -2,8 +2,8 @@ import type React from "react";
 
 export type Vec3 = [number, number, number];
 
-/** fov 是横屏时的竖直视角（度）；竖屏由 CameraRig 自动换算 */
-export type CameraPose = { pos: Vec3; look: Vec3; fov: number };
+/** fov 是横屏时的竖直视角（度）；竖屏由 CameraRig 自动换算。near 默认 0.02，贴近微观时调小 */
+export type CameraPose = { pos: Vec3; look: Vec3; fov: number; near?: number };
 
 /** 镜头函数拿到的时间信息。画面只由这些值算出 */
 export type ShotContext = {
@@ -16,14 +16,19 @@ export type ShotContext = {
   /** 全片秒数：呼吸、闪烁这类贯穿全片的小动作用它，跨段不跳 */
   time: number;
   vertical: boolean;
+  /**
+   * 旁白里某个词开口的时刻（本段秒数）。nth 选第几次出现，从 0 数。
+   * 找不到就报错：改了旁白却没改镜头，宁可渲染失败也不要声画错位。
+   */
+  cue: (word: string, nth?: number) => number;
 };
 
 export type StageState = { camera: CameraPose };
 
 export type Shot<S extends StageState> = {
   pose: (ctx: ShotContext) => S;
-  /** 屏幕标题在本段进度的哪一刻入场，默认 0.08 */
-  headingAt?: number;
+  /** 屏幕标题在本段进度的哪一刻入场，默认 0.08；写一个词就在旁白说到这个词时入场 */
+  headingAt?: number | string;
 };
 
 export type StageDef<S extends StageState> = {

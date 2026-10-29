@@ -82,7 +82,20 @@
 每个 `stage` 段的 `shot` 指向 `src/stages/<stage>/shots.ts` 里的一个镜头函数：输入本段进度 `p`（0→1），输出相机和整个舞台的状态（天色、水珠、粒子……）。
 相邻镜头的首尾位置要对上，画面才连续。还没写的镜头名会先用舞台的 `fallback` 画面。
 
-- `tent`：一顶双层帐篷、一个睡着的人、一小块圆形草地；天色从深夜到清晨可调。镜头：`hook`、`rewind`。
+镜头里用 `ctx.cue("word")` 拿到旁白说到某个词的时刻（来自 ElevenLabs 字符时间戳），动作对词而不是写死秒数；
+`headingAt` 也可以写一个词。改了旁白但镜头里引用的词没了，渲染会直接报错。
+
+- `tent`：一顶双层帐篷、一个睡着的人、一小块圆形草地；天色从深夜到清晨可调。
+  镜头：`hook`（清晨滴水特写）、`rewind`（倒带回夜里）、`source`（Lab View：呼出的水汽、量杯）、
+  `coldfly`（外帐散热变冷、冷暖刻度条）、`dew`（钻进布面微观、露点线、水珠）、
+  `worst`（无风、低洼水边、门拉上）、`fix`（开门开通风口、绷紧外帐、高处树下）、`payoff`（回到开头的特写）。
+
+任何舞台都能用的部件：
+
+- `src/stages/lab.ts`：Lab View。`labify(material, {color, alpha})` 让材质在扫描面以上换成热成像色，`thermal(t)` 是色阶，扫描线进出由 `labUniforms.uScanY` 控制。色值在 `brand.lab`。
+- `src/stages/GlowPoints.tsx`：发光粒子（水汽、热量），位置每帧由帧号算出，不靠后期泛光。
+- `src/stages/FlowLines.tsx`：沿曲线流动的虚线管（风的流线、散出去的热量）。
+- `src/stages/project.ts`：把 3D 点投到画面上，给贴着物体走的标注用。
 
 渲染 3D 时要加 `--gl=angle`（本机有显卡）或 `--gl=swangle`（云端没有显卡）。
 
