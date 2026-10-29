@@ -94,13 +94,15 @@ export const Macro: React.FC<{ state: TentState; env: THREE.Texture }> = ({ stat
   m.back.color.copy(cold).multiplyScalar(0.3);
   m.back.emissive.copy(cold).multiplyScalar(0.25);
 
+  // 这两个 effect 不写依赖、每帧都跑：微观层不显示时整组卸掉，再出现时是新的 instancedMesh，
+  // 依赖不变的话 effect 不会重跑，矩阵全是单位阵，所有线叠成一根穿过画面的亮线
   const threadRef = useRef<THREE.InstancedMesh>(null);
   useLayoutEffect(() => {
     const im = threadRef.current;
     if (!im) return;
     weave.forEach((mm, i) => im.setMatrixAt(i, mm));
     im.instanceMatrix.needsUpdate = true;
-  }, [weave]);
+  });
 
   const dropRef = useRef<THREE.InstancedMesh>(null);
   useLayoutEffect(() => {
@@ -115,7 +117,7 @@ export const Macro: React.FC<{ state: TentState; env: THREE.Texture }> = ({ stat
       im.setMatrixAt(i, mm);
     });
     im.instanceMatrix.needsUpdate = true;
-  }, [macro.dew]);
+  });
 
   if (macro.show <= 0.001) return null;
   const heroR = 0.0045 + 0.012 * macro.hero;

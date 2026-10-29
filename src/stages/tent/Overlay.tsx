@@ -123,6 +123,8 @@ const Labels: React.FC<{ labels: Label[]; state: TentState }> = ({ labels, state
           const tx = p.x + dx * l.show;
           const ty = p.y + dy * l.show;
           const right = dx < 0;
+          // 入场时字从圆点滑出来；圆点本身离字幕很近时，字也不能压到字幕上
+          const textY = Math.min(ty + 16 * u, height - content.bottom + 60 * u);
           const textX = right
             ? Math.max(tx - 16 * u, safe.left + tw - 16 * u)
             : Math.min(tx + 16 * u, width - safe.right - tw + 16 * u);
@@ -133,7 +135,7 @@ const Labels: React.FC<{ labels: Label[]; state: TentState }> = ({ labels, state
               <line x1={p.x} y1={p.y} x2={tx} y2={ty} stroke={col} strokeWidth={4 * u} strokeLinecap="round" />
               <text
                 x={textX}
-                y={ty + 16 * u}
+                y={textY}
                 textAnchor={right ? "end" : "start"}
                 fontSize={fs}
                 fontWeight={700}
