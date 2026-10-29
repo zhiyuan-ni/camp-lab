@@ -185,7 +185,7 @@ const source: Shot<TentState> = {
 };
 
 // ---------------------------------------------------------------- s04 篷布为什么冷：升到帐篷上方，热量散向夜空，篷布由橙变蓝
-const COLD_SKY: CameraPose = { pos: [2.9, 3.3, 3.7], look: [-0.1, 1.5, -0.4], fov: 38 };
+const COLD_SKY: CameraPose = { pos: [2.6, 3.0, 3.3], look: [-0.1, 1.35, -0.3], fov: 34 };
 const COLD_TENT: CameraPose = { pos: [2.05, 3.2, 3.0], look: [0, 0.75, 0], fov: 34 };
 /** 外帐那一小块的外侧：镜头要从外面贴着坡面滑进去 */
 const PATCH_OUT = (b: number, c: number) => macroPoint(0, b, -c);
