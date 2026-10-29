@@ -49,6 +49,19 @@
 }
 ```
 
+### 封面
+
+`npm run render` 的封面不取正片的某一帧，而是单独的单帧合成 `<slug>-cover-16x9` / `<slug>-cover-9x16`（`src/Cover.tsx`）：
+3D 舞台定格在 `cover` 指定的那一刻，去掉读数和字幕，左上角放大标题和品牌标。时刻的写法和音效一样。
+
+```jsonc
+"cover": {
+  "segment": "s05", "at": "#pull", "offset": 1.8,      // 横屏取这一刻
+  "title": "Raining inside your tent?",                // 短，两三行以内；不写就用 title
+  "vertical": { "segment": "s04", "at": "losing" }     // 可选：竖屏构图不同，另取一刻
+}
+```
+
 ### 音效
 
 每段可以挂一串 `sfx`，时刻用三种写法之一：数字（本段第几秒）、旁白里的一个词、或者 `"#名字"`（镜头在 `shots.ts` 的 `marks` 里声明的动作时刻，比如 `#land` 是水珠落地）。
@@ -117,7 +130,7 @@
 - `src/stages/FlowLines.tsx`：沿曲线流动的虚线管（风的流线、散出去的热量）。
 - `src/stages/project.ts`：把 3D 点投到画面上，给贴着物体走的标注用。
 
-渲染 3D 时要加 `--gl=angle`（本机有显卡）或 `--gl=swangle`（云端没有显卡）。
+渲染 3D 用 WebGL：`remotion.config.ts` 默认 `angle`（本机有显卡）；云端没有显卡时设环境变量 `REMOTION_GL=swangle`（`npm run sheet` 也读它）。
 
 ## 目录结构
 
