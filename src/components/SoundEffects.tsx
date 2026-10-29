@@ -1,38 +1,18 @@
 import React from "react";
 import { Audio, Sequence, interpolate, staticFile, useVideoConfig } from "remotion";
 import type { Episode, Sfx } from "../lib/schema";
-import type { TimedSegment, Timeline } from "../lib/timeline";
-import { stages } from "../stages";
-import { findCue, shotMarks } from "../stages/evaluate";
+import type { Timeline } from "../lib/timeline";
+import { momentResolver } from "./moment";
 
 type Placed = { key: string; src: string; from: number; frames?: number; volume: number; loop: boolean; fadeIn: number; fadeOut: number };
 
 /** 把 script.json 里每段的 sfx 换算成全片帧号。时刻找不到就报错，不让声音悄悄错位 */
 export const placeSfx = (episode: Episode, timeline: Timeline, fps: number): Placed[] => {
-  const stage = episode.stage ? stages[episode.stage] : undefined;
-  const marks = new Map<string, Record<string, number>>();
-  const segOf = (id: string) => {
-    const t = timeline.segments.find((s) => s.segment.id === id);
-    if (!t) throw new Error(`sfx: segment "${id}" not found`);
-    return t;
-  };
-  /** 段内某时刻 → 全片帧号 */
-  const frameAt = (t: TimedSegment, at: number | string | undefined, nth: number, offset: number) => {
-    let s: number;
-    if (at === undefined) s = t.durationInFrames / fps;
-    else if (typeof at === "number") s = at;
-    else if (at.startsWith("#")) {
-      if (!marks.has(t.segment.id)) marks.set(t.segment.id, shotMarks(stage, t, fps));
-      const m = marks.get(t.segment.id)![at.slice(1)];
-      if (m === undefined) throw new Error(`sfx: mark "${at}" not declared by the shot of ${t.segment.id}`);
-      s = m;
-    } else s = findCue(t.cues, at, nth, t.segment.id);
-    return t.from + Math.round((s + offset) * fps);
-  };
+  const { segment, frameAt } = momentResolver(episode, timeline, fps);
   return timeline.segments.flatMap((t) =>
     (t.segment.sfx ?? []).map((x: Sfx, i): Placed => {
       const from = Math.max(0, frameAt(t, x.at, x.nth, x.offset));
-      const to = x.until ? frameAt(segOf(x.until.segment), x.until.at, 0, x.until.offset) : x.duration ? from + Math.round(x.duration * fps) : undefined;
+      const to = x.until ? frameAt(segment(x.until.segment), x.until.at, 0, x.until.offset) : x.duration ? from + Math.round(x.duration * fps) : undefined;
       if (to !== undefined && to <= from) throw new Error(`sfx ${t.segment.id}[${i}] ends before it starts`);
       return { key: `${t.segment.id}-${i}`, src: x.src, from, frames: to === undefined ? undefined : Math.min(to, timeline.durationInFrames) - from, volume: x.volume, loop: x.loop, fadeIn: Math.round(x.fadeIn * fps), fadeOut: Math.round(x.fadeOut * fps) };
     }),

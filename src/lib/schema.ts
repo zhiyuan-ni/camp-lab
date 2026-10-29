@@ -128,6 +128,20 @@ export const episodeSchema = z.object({
   /** 可选：public/ 下的背景音乐路径，例如 music/calm.mp3 */
   bgm: z.string().optional(),
   bgmVolume: z.number().min(0).max(1).default(0.12),
+  /**
+   * 可选：封面（缩略图）取哪一刻的画面，单独渲成一张图，不用第 0 帧。
+   * at 的写法和音效一样；title 不写就用 title 字段。封面字要短，两行以内。
+   */
+  cover: z
+    .object({
+      segment: z.string(),
+      at: moment.default(0),
+      offset: z.number().default(0),
+      title: z.string().optional(),
+      /** 可选：竖屏另取一刻（竖屏构图不同，横屏好看的那一刻主体可能太小） */
+      vertical: z.object({ segment: z.string(), at: moment.default(0), offset: z.number().default(0) }).optional(),
+    })
+    .optional(),
   segments: z.array(segmentSchema).min(1),
 });
 

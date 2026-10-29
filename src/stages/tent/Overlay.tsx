@@ -113,20 +113,26 @@ const Labels: React.FC<{ labels: Label[]; state: TentState }> = ({ labels, state
           let dy = (vertical ? l.vdy ?? l.dy : l.dy) * u;
           // 字出了安全区或压到字幕区就翻到另一边
           const tw = l.text.length * fs * 0.56 + 16 * u;
-          if (dx >= 0 && p.x + dx + tw > width - safe.right) dx = -Math.abs(dx);
-          else if (dx < 0 && p.x + dx - tw < safe.left) dx = Math.abs(dx);
+          // 两边都放不下时，选空间大的一边，再把字往里推
+          const roomR = width - safe.right - (p.x + Math.abs(dx));
+          const roomL = p.x - Math.abs(dx) - safe.left;
+          if (dx >= 0 && roomR < tw && roomL > roomR) dx = -Math.abs(dx);
+          else if (dx < 0 && roomL < tw && roomR > roomL) dx = Math.abs(dx);
           if (p.y + dy + fs * 0.4 > height - content.bottom + 60 * u) dy = -Math.abs(dy);
           else if (p.y + dy - fs < safe.top) dy = Math.abs(dy);
           const tx = p.x + dx * l.show;
           const ty = p.y + dy * l.show;
           const right = dx < 0;
+          const textX = right
+            ? Math.max(tx - 16 * u, safe.left + tw - 16 * u)
+            : Math.min(tx + 16 * u, width - safe.right - tw + 16 * u);
           const col = l.color ?? brand.colors.text;
           return (
             <g key={l.id} opacity={Math.min(1, l.show * 1.4)}>
               <circle cx={p.x} cy={p.y} r={9 * u * l.show} fill={col} />
               <line x1={p.x} y1={p.y} x2={tx} y2={ty} stroke={col} strokeWidth={4 * u} strokeLinecap="round" />
               <text
-                x={tx + (right ? -16 : 16) * u}
+                x={textX}
                 y={ty + 16 * u}
                 textAnchor={right ? "end" : "start"}
                 fontSize={fs}

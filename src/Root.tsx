@@ -2,6 +2,7 @@ import React from "react";
 import { CalculateMetadataFunction, Composition, Folder } from "remotion";
 import { FORMATS, FPS, type FormatKey } from "./brand";
 import { ContactSheet, SHEET_GAP, SHEET_HEADER, SHEET_LABEL, type ContactSheetProps } from "./ContactSheet";
+import { Cover } from "./Cover";
 import { EpisodeVideo, type EpisodeProps } from "./Episode";
 import { episodes } from "./episodes.generated";
 import { z } from "zod";
@@ -51,22 +52,27 @@ export const RemotionRoot: React.FC = () => (
       const slug = (script as { slug: string }).slug;
       return (
         <Folder key={slug} name={slug}>
-          {(Object.keys(FORMATS) as FormatKey[]).map((key) => {
+          {(Object.keys(FORMATS) as FormatKey[]).flatMap((key) => {
             const f = FORMATS[key];
-            return (
+            const common = {
+              schema: compositionSchema,
+              width: f.width,
+              height: f.height,
+              fps: FPS,
+              durationInFrames: 1,
+              defaultProps: { episode: script, voiceover, showCaptions: true, showSafeZone: false } as unknown as EpisodeProps,
+            };
+            return [
+              <Composition key={key} id={`${slug}-${f.suffix}`} component={EpisodeVideo} {...common} calculateMetadata={calculateMetadata} />,
+              // 封面：单帧合成，画面取 script.json 的 cover 指定的那一刻
               <Composition
-                key={key}
-                id={`${slug}-${f.suffix}`}
-                component={EpisodeVideo}
-                schema={compositionSchema}
-                width={f.width}
-                height={f.height}
-                fps={FPS}
-                durationInFrames={1}
-                defaultProps={{ episode: script, voiceover, showCaptions: true, showSafeZone: false } as unknown as EpisodeProps}
-                calculateMetadata={calculateMetadata}
-              />
-            );
+                key={`${key}-cover`}
+                id={`${slug}-cover-${f.suffix}`}
+                component={Cover}
+                {...common}
+                calculateMetadata={async (o) => ({ ...(await calculateMetadata(o)), durationInFrames: 1 })}
+              />,
+            ];
           })}
         </Folder>
       );

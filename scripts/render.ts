@@ -39,7 +39,8 @@ for (const f of Object.values(FORMATS)) {
   const video = path.join("out", slug, `${id}.mp4`);
   run(["render", "src/index.ts", id, video, `--props=${propsFile}`]);
   checkAndFix(path.join(ROOT, video), true);
-  run(["still", "src/index.ts", id, path.join("out", slug, `${id}-cover.png`), "--frame=75", `--props=${propsFile}`]);
+  // 封面是单独的合成（src/Cover.tsx），不取正片的某一帧
+  run(["still", "src/index.ts", `${slug}-cover-${f.suffix}`, path.join("out", slug, `${id}-cover.png`), `--props=${propsFile}`]);
 }
 fs.rmSync(propsFile);
 if (!args.includes("--no-sheet")) {

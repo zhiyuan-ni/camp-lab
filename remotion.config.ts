@@ -8,3 +8,6 @@ Config.setConcurrency(null);
 if (process.env.REMOTION_BROWSER_EXECUTABLE) {
   Config.setBrowserExecutable(process.env.REMOTION_BROWSER_EXECUTABLE);
 }
+
+// 3D 舞台用 WebGL：本机有显卡用 angle；云端没有显卡时设 REMOTION_GL=swangle
+Config.setChromiumOpenGlRenderer((process.env.REMOTION_GL as "angle" | "swangle" | "egl" | "swiftshader" | "vulkan" | undefined) ?? "angle");

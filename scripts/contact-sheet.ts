@@ -17,6 +17,8 @@ import { PUBLIC_DIR, ROOT, loadEpisode, requireSlug } from "./paths";
 
 const TILES = 9;
 const browserExecutable = process.env.REMOTION_BROWSER_EXECUTABLE ?? null;
+/** 和 remotion.config.ts 一致：默认 angle，云端设 REMOTION_GL=swangle */
+const chromiumOptions = { gl: (process.env.REMOTION_GL ?? "angle") as "angle" | "swangle" };
 
 export const makeContactSheets = async (slug: string, serveUrl?: string) => {
   loadEpisode(slug);
@@ -29,7 +31,7 @@ export const makeContactSheets = async (slug: string, serveUrl?: string) => {
   for (const f of Object.values(FORMATS)) {
     const id = `${slug}-${f.suffix}`;
     const inputProps = { showSafeZone: true };
-    const comp = await selectComposition({ serveUrl: url, id, inputProps, browserExecutable });
+    const comp = await selectComposition({ serveUrl: url, id, inputProps, browserExecutable, chromiumOptions });
     const timeline = (comp.props as { timeline: Timeline }).timeline;
     const vertical = f.height > f.width;
     const tileWidth = vertical ? 360 : 640;
@@ -48,6 +50,7 @@ export const makeContactSheets = async (slug: string, serveUrl?: string) => {
         jpegQuality: 85,
         scale,
         browserExecutable,
+        chromiumOptions,
       });
       tiles.push({
         src: `data:image/jpeg;base64,${buffer!.toString("base64")}`,

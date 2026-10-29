@@ -4,6 +4,17 @@
   "title": "Why is it raining inside my tent?",
   "subtitle": "The science of tent condensation",
   "stage": "tent",
+  "cover": {
+    "segment": "s05",
+    "at": "#pull",
+    "offset": 1.8,
+    "title": "Raining inside your tent?",
+    "vertical": {
+      "segment": "s04",
+      "at": "losing",
+      "offset": 0
+    }
+  },
   "segments": [
     {
       "id": "s01",

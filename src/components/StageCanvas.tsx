@@ -23,8 +23,14 @@ const CameraRig: React.FC<{ pose: CameraPose }> = ({ pose }) => {
  * 整集共用的 3D 舞台：一块画布从头到尾不卸载，镜头由 timeline 里每段的 shot 名决定。
  * frame 用全片帧号，所以必须放在 Episode 的顶层，不能放进某个 <Sequence>。
  */
-export const StageCanvas: React.FC<{ stageId: string; timeline: Timeline }> = ({ stageId, timeline }) => {
-  const frame = useCurrentFrame();
+export const StageCanvas: React.FC<{ stageId: string; timeline: Timeline; /** 封面不要读数和标注 */ overlay?: boolean; /** 封面用：固定画某一帧 */ frame?: number }> = ({
+  stageId,
+  timeline,
+  overlay = true,
+  frame: fixedFrame,
+}) => {
+  const current = useCurrentFrame();
+  const frame = fixedFrame ?? current;
   const { fps, width, height } = useVideoConfig();
   const stage = stages[stageId];
   if (!stage) throw new Error(`Unknown stage "${stageId}". Register it in src/stages/index.ts`);
@@ -37,7 +43,7 @@ export const StageCanvas: React.FC<{ stageId: string; timeline: Timeline }> = ({
         <CameraRig pose={state.camera} />
         <World state={state} vertical={vertical} />
       </ThreeCanvas>
-      {Overlay && <Overlay state={state} shot={shot} ctx={ctx} />}
+      {overlay && Overlay && <Overlay state={state} shot={shot} ctx={ctx} />}
     </AbsoluteFill>
   );
 };
