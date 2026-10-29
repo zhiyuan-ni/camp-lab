@@ -15,7 +15,7 @@ import type { TentState } from "./state";
  *
  * 局部坐标 (a, b, c)：a 沿屋脊方向，b 沿坡面往屋脊，c 垂直布面往帐篷里（c > 0 在布下面）。
  */
-const P = underFly(0.3, 0.55, 1, 0);
+const P = underFly(0.0, 0.55, 1, 0);
 // a 轴朝 -x，这样 (a, b, c) 是右手系，c 正好朝帐篷里
 const AX = new THREE.Vector3(-1, 0, 0);
 const UP = new THREE.Vector3(0, H2 - FLY_TH * 1.3 - EAVE_Y, -(W2 - FLY_TH)).normalize();

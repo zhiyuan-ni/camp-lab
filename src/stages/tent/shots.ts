@@ -208,7 +208,7 @@ const coldfly: Shot<TentState> = {
 const MACRO_CAM: CameraPose = { pos: macroPoint(0, -0.075, 0.035), look: macroPoint(HERO_AB.a, 0.03, 0.002), fov: 50, near: 0.002 };
 const MACRO_PUSH: CameraPose = { pos: macroPoint(0.003, -0.058, 0.03), look: macroPoint(HERO_AB.a, HERO_AB.b, 0.006), fov: 48, near: 0.002 };
 // 拉回：在内帐和外帐之间顺着坡往下退，从檐口底下钻出去，退到全景
-const PULL: Vec3[] = [MACRO_PUSH.pos, [0.33, 0.45, 0.86], [0.38, 0.16, 1.02], [0.47, 0.06, 1.5], [1.6, 0.9, 3.4], [3.0, 1.9, 5.0]];
+const PULL: Vec3[] = [MACRO_PUSH.pos, [0.03, 0.45, 0.86], [0.1, 0.16, 1.02], [0.25, 0.06, 1.5], [1.6, 0.9, 3.4], [3.0, 1.9, 5.0]];
 const WIDE_FRONT: CameraPose = { pos: [3.0, 1.9, 5.0], look: [0, 0.6, 0], fov: 30 };
 
 const dew: Shot<TentState> = {
