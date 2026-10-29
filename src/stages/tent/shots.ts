@@ -1,7 +1,7 @@
 import { Easing } from "remotion";
 import { clamp01, lerp, lerp3, seg, spline } from "../math";
 import type { CameraPose, Shot, ShotContext, Vec3 } from "../types";
-import { H2, VENT_V, VENT_X, onFly } from "./geometry";
+import { H2, TL, VENT_V, VENT_X, onFly } from "./geometry";
 import { HERO_AB, macroPoint } from "./Macro";
 import type { Label, TentState } from "./state";
 import { POND, groundY, tentY } from "./state";
@@ -55,6 +55,11 @@ const blend = (a: CameraPose, b: CameraPose, u: number): CameraPose => ({
 /** 依次经过几个关键位：每一步 [开始秒, 结束秒, 目标, 缓动] */
 const path = (ctx: ShotContext, start: CameraPose, steps: [number, number, CameraPose, ((t: number) => number)?][]) =>
   steps.reduce((pose, [a, b, to, e]) => blend(pose, to, sec(ctx, a, b, e)), start);
+/** 镜头第一次满足 test 的那一刻（本段秒数），给音效对动作用；找不到就返回段尾 */
+const when = (ctx: ShotContext, pose: (c: ShotContext) => TentState, test: (s: TentState) => boolean) => {
+  for (let t = 0; t < ctx.duration; t += 1 / 60) if (test(pose({ ...ctx, t, p: t / ctx.duration }))) return t;
+  return ctx.duration;
+};
 /** 进场 / 退场的标注：在 inAt 出现，outAt 消失 */
 const showFor = (ctx: ShotContext, inAt: number, outAt?: number) =>
   sec(ctx, inAt, inAt + 0.4, out) * (outAt === undefined ? 1 : 1 - sec(ctx, outAt, outAt + 0.4));
@@ -105,6 +110,11 @@ const hook: Shot<TentState> = {
       inner: 0,
     };
   },
+  marks: (ctx) => ({
+    fall: 0.47 * ctx.duration,
+    land: 0.58 * ctx.duration,
+    wall: when(ctx, hook.pose, (s) => s.camera.pos[0] < -TL / 2),
+  }),
 };
 
 const rewind: Shot<TentState> = {
@@ -134,6 +144,7 @@ const rewind: Shot<TentState> = {
       clock: p > 0.66 ? { hours: lerp(30 + 40 / 60, 22.5, back), show: seg(p, 0.66, 0.74) } : null,
     };
   },
+  marks: (ctx) => ({ back: 0.7 * ctx.duration }),
 };
 
 // ---------------------------------------------------------------- s03 水从哪来：扫描线切进 Lab View，呼出的水汽填满帐篷
@@ -201,6 +212,7 @@ const coldfly: Shot<TentState> = {
       gauge: { show: sec(ctx, at("fly") - 0.2, at("fly") + 0.4, out), air: 0.86, fly: flyTemp, dew: 0 },
     };
   },
+  marks: (ctx) => ({ dive: ctx.duration }),
 };
 
 // ---------------------------------------------------------------- s05 露点：钻进布里，水汽撞上冰冷的布面，变回水珠
@@ -252,6 +264,7 @@ const dew: Shot<TentState> = {
       gauge: { show: 1 - sec(ctx, pullA + 0.6, pullA + 1.2), air: 0.86, fly: 0.08, dew: sec(ctx, at("dew") - 0.2, at("point") + 0.2, out) },
     };
   },
+  marks: (ctx) => ({ pull: ctx.cue("thats") - 0.3 }),
 };
 
 // ---------------------------------------------------------------- s06 什么时候最糟：无风、低洼水边、门拉上
@@ -376,6 +389,7 @@ const payoff: Shot<TentState> = {
       brand: sec(ctx, at("follow") - 0.1, at("follow") + 0.5, out),
     };
   },
+  marks: (ctx) => ({ wall: when(ctx, payoff.pose, (s) => s.camera.pos[0] > -TL / 2) }),
 };
 
 /** 没有对应镜头时的画面：停在夜里帐篷外慢慢绕 */

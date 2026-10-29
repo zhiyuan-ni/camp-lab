@@ -7,11 +7,39 @@ import { z } from "zod";
 
 const tone = z.enum(["good", "bad", "neutral"]);
 
+/**
+ * 段内的一个时刻：数字 = 本段第几秒（含开头留白）；单词 = 旁白说到这个词的那一刻；
+ * "#名字" = 舞台镜头在 marks 里声明的动作时刻（比如水珠落地），跟着镜头走，不用手算秒数。
+ */
+const moment = z.union([z.number().min(0), z.string().min(1)]);
+
+/** 一个音效：从某段的某个时刻开始。声音文件放 public/sfx/，授权写进 LICENSES.md */
+export const sfxSchema = z.object({
+  /** public/ 下的路径，例如 sfx/drip.wav */
+  src: z.string(),
+  at: moment.default(0),
+  /** at 是单词时，取第几次出现（从 0 数） */
+  nth: z.number().int().min(0).default(0),
+  /** 在 at 基础上再挪多少秒，可以是负数（让声音的重心对上动作） */
+  offset: z.number().default(0),
+  volume: z.number().min(0).max(1).default(0.5),
+  /** 可选：播到哪一刻为止（可以跨段）。不写就把文件播完 */
+  until: z.object({ segment: z.string(), at: moment.optional(), offset: z.number().default(0) }).optional(),
+  /** 可选：直接给播放秒数，和 until 二选一 */
+  duration: z.number().positive().optional(),
+  /** 文件比要播的时间短时循环，环境声用 */
+  loop: z.boolean().default(false),
+  fadeIn: z.number().min(0).default(0),
+  fadeOut: z.number().min(0).default(0),
+});
+
 const base = {
   id: z.string().regex(/^[a-z0-9-]+$/i, "segment id 只能用字母数字和 -"),
   narration: z.string().min(1),
   /** 旁白结束后额外停留的秒数，默认 0.5 */
   padAfter: z.number().min(0).optional(),
+  /** 可选：这一段里的音效和环境声 */
+  sfx: z.array(sfxSchema).optional(),
 };
 
 export const segmentSchema = z.discriminatedUnion("scene", [
@@ -129,6 +157,7 @@ export type Episode = z.infer<typeof episodeSchema>;
 export type EpisodeInput = z.input<typeof episodeSchema>;
 export type Segment = z.infer<typeof segmentSchema>;
 export type SceneType = Segment["scene"];
+export type Sfx = z.infer<typeof sfxSchema>;
 export type Voiceover = z.infer<typeof voiceoverSchema>;
 export type Alignment = z.infer<typeof alignmentSchema>;
 export type SegmentOf<T extends SceneType> = Extract<Segment, { scene: T }>;

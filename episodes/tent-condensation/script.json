@@ -9,50 +9,332 @@
       "id": "s01",
       "scene": "stage",
       "narration": "You wake up, and your tent is dripping. Did it rain overnight?",
-      "props": { "shot": "hook", "heading": "Did it leak?" }
+      "props": {
+        "shot": "hook",
+        "heading": "Did it leak?"
+      },
+      "sfx": [
+        {
+          "src": "sfx/morning.wav",
+          "at": 0,
+          "volume": 0.28,
+          "loop": true,
+          "until": {
+            "segment": "s02",
+            "at": "#back",
+            "offset": 0.6
+          },
+          "fadeOut": 1.2
+        },
+        {
+          "src": "sfx/plink-3.wav",
+          "at": "#fall",
+          "volume": 0.35
+        },
+        {
+          "src": "sfx/tap.wav",
+          "at": "#land",
+          "volume": 0.55
+        },
+        {
+          "src": "sfx/whoosh.wav",
+          "at": "#wall",
+          "offset": -0.85,
+          "volume": 0.4
+        }
+      ]
     },
     {
       "id": "s02",
       "scene": "stage",
       "narration": "Not a single drop fell last night. So where did all this water come from? Let’s rewind.",
       "padAfter": 1.6,
-      "props": { "shot": "rewind", "heading": "Clear skies all night" }
+      "props": {
+        "shot": "rewind",
+        "heading": "Clear skies all night"
+      },
+      "sfx": [
+        {
+          "src": "sfx/rewind.wav",
+          "at": "#back",
+          "volume": 0.5
+        },
+        {
+          "src": "sfx/night.wav",
+          "at": "#back",
+          "offset": 1.0,
+          "volume": 0.15,
+          "loop": true,
+          "until": {
+            "segment": "s03",
+            "at": 0.6
+          },
+          "fadeIn": 1.0,
+          "fadeOut": 0.6
+        }
+      ]
     },
     {
       "id": "s03",
       "scene": "stage",
       "narration": "Every breath you let out is warm and full of water vapor. Add what your skin gives off, and one sleeper puts about a cup of water into the air overnight.",
-      "props": { "shot": "source", "heading": "About 1 cup", "sub": "per person, per night" }
+      "props": {
+        "shot": "source",
+        "heading": "About 1 cup",
+        "sub": "per person, per night"
+      },
+      "sfx": [
+        {
+          "src": "sfx/scan-in.wav",
+          "at": 0,
+          "volume": 0.45
+        },
+        {
+          "src": "sfx/lab-hum.wav",
+          "at": 0.2,
+          "volume": 0.08,
+          "loop": true,
+          "until": {
+            "segment": "s06",
+            "at": 1.2
+          },
+          "fadeIn": 1.0,
+          "fadeOut": 1.0
+        },
+        {
+          "src": "sfx/night.wav",
+          "at": 0.3,
+          "volume": 0.06,
+          "loop": true,
+          "until": {
+            "segment": "s06",
+            "at": 0.6
+          },
+          "fadeIn": 0.8,
+          "fadeOut": 0.5
+        },
+        {
+          "src": "sfx/tick.wav",
+          "at": "vapor",
+          "offset": -0.1,
+          "volume": 0.25
+        },
+        {
+          "src": "sfx/pop.wav",
+          "at": "sleeper",
+          "offset": -0.3,
+          "volume": 0.3
+        }
+      ]
     },
     {
       "id": "s04",
       "scene": "stage",
       "narration": "Meanwhile, on a clear night, the fly is losing heat straight to the open sky. So it ends up colder than the air inside your tent.",
-      "props": { "shot": "coldfly", "heading": "Cold fly, warm air" }
+      "props": {
+        "shot": "coldfly",
+        "heading": "Cold fly, warm air"
+      },
+      "sfx": [
+        {
+          "src": "sfx/whoosh.wav",
+          "at": "losing",
+          "offset": -0.3,
+          "volume": 0.2
+        },
+        {
+          "src": "sfx/tick.wav",
+          "at": "fly",
+          "offset": -0.2,
+          "volume": 0.25
+        },
+        {
+          "src": "sfx/whoosh.wav",
+          "at": "#dive",
+          "offset": -0.35,
+          "volume": 0.4
+        }
+      ]
     },
     {
       "id": "s05",
       "scene": "stage",
       "narration": "When that moist air touches the cold fabric, it drops below its dew point, and the vapor turns back into liquid water. That’s your rain.",
-      "props": { "shot": "dew", "heading": "Back to water" }
+      "props": {
+        "shot": "dew",
+        "heading": "Back to water"
+      },
+      "sfx": [
+        {
+          "src": "sfx/plink-1.wav",
+          "at": "dew",
+          "offset": 0.3,
+          "volume": 0.3
+        },
+        {
+          "src": "sfx/plink-2.wav",
+          "at": "point",
+          "offset": 0.4,
+          "volume": 0.25
+        },
+        {
+          "src": "sfx/tick.wav",
+          "at": "dew",
+          "offset": -0.2,
+          "volume": 0.2
+        },
+        {
+          "src": "sfx/plink-3.wav",
+          "at": "vapor",
+          "offset": 0.2,
+          "volume": 0.3
+        },
+        {
+          "src": "sfx/plink-2.wav",
+          "at": "turns",
+          "offset": 0.3,
+          "volume": 0.25
+        },
+        {
+          "src": "sfx/bloop.wav",
+          "at": "water",
+          "volume": 0.45
+        },
+        {
+          "src": "sfx/whoosh.wav",
+          "at": "#pull",
+          "offset": 0.2,
+          "volume": 0.35
+        }
+      ]
     },
     {
       "id": "s06",
       "scene": "stage",
       "narration": "It’s worst on calm nights, in low spots near water, with every door zipped shut.",
-      "props": { "shot": "worst" }
+      "props": {
+        "shot": "worst"
+      },
+      "sfx": [
+        {
+          "src": "sfx/scan-out.wav",
+          "at": 0,
+          "volume": 0.4
+        },
+        {
+          "src": "sfx/night.wav",
+          "at": 0.2,
+          "volume": 0.15,
+          "loop": true,
+          "until": {
+            "segment": "s07",
+            "at": "can"
+          },
+          "fadeIn": 1.0,
+          "fadeOut": 1.5
+        },
+        {
+          "src": "sfx/tick.wav",
+          "at": "calm",
+          "offset": -0.1,
+          "volume": 0.22
+        },
+        {
+          "src": "sfx/tick.wav",
+          "at": "low",
+          "volume": 0.22
+        },
+        {
+          "src": "sfx/zip.wav",
+          "at": "door",
+          "volume": 0.4
+        }
+      ]
     },
     {
       "id": "s07",
       "scene": "stage",
       "narration": "So give that vapor a way out. Open the vents, keep the fly tight, and pitch on higher, drier ground, under trees if you can.",
-      "props": { "shot": "fix" }
+      "props": {
+        "shot": "fix"
+      },
+      "sfx": [
+        {
+          "src": "sfx/zip.wav",
+          "at": 0.3,
+          "volume": 0.35
+        },
+        {
+          "src": "sfx/wind.wav",
+          "at": 0.4,
+          "volume": 0.4
+        },
+        {
+          "src": "sfx/tick.wav",
+          "at": "vents",
+          "offset": -0.1,
+          "volume": 0.22
+        },
+        {
+          "src": "sfx/tension.wav",
+          "at": "tight",
+          "offset": -0.1,
+          "volume": 0.4
+        },
+        {
+          "src": "sfx/whoosh.wav",
+          "at": "pitch",
+          "offset": -0.2,
+          "volume": 0.25
+        },
+        {
+          "src": "sfx/rustle.wav",
+          "at": "under",
+          "offset": -0.7,
+          "volume": 0.35
+        },
+        {
+          "src": "sfx/morning.wav",
+          "at": "can",
+          "offset": -0.5,
+          "volume": 0.28,
+          "loop": true,
+          "until": {
+            "segment": "s08"
+          },
+          "fadeIn": 1.5,
+          "fadeOut": 0.3
+        }
+      ]
     },
     {
       "id": "s08",
       "scene": "stage",
       "narration": "It was never a leak. It was your breath. Follow CAMP LAB for more camping science.",
-      "props": { "shot": "payoff", "heading": "Let it breathe" }
+      "props": {
+        "shot": "payoff",
+        "heading": "Let it breathe"
+      },
+      "sfx": [
+        {
+          "src": "sfx/whoosh.wav",
+          "at": "#wall",
+          "offset": -0.85,
+          "volume": 0.4
+        },
+        {
+          "src": "sfx/breath.wav",
+          "at": "breath",
+          "offset": -0.15,
+          "volume": 0.25
+        },
+        {
+          "src": "sfx/chime.wav",
+          "at": "follow",
+          "offset": -0.1,
+          "volume": 0.35
+        }
+      ]
     }
   ]
 }

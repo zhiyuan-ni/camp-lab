@@ -3,6 +3,7 @@ import { AbsoluteFill, Audio, Sequence, staticFile } from "remotion";
 import { Background } from "./components/Background";
 import { Captions } from "./components/Captions";
 import { SafeZone } from "./components/SafeZone";
+import { SoundEffects } from "./components/SoundEffects";
 import { StageCanvas } from "./components/StageCanvas";
 import type { Episode, Voiceover } from "./lib/schema";
 import type { Timeline } from "./lib/timeline";
@@ -25,6 +26,7 @@ export const EpisodeVideo: React.FC<EpisodeProps> = ({ episode, timeline, showCa
     <AbsoluteFill>
       {episode.stage ? <StageCanvas stageId={episode.stage} timeline={timeline} /> : <Background />}
       {episode.bgm && <Audio src={staticFile(episode.bgm)} volume={episode.bgmVolume} loop />}
+      <SoundEffects episode={episode} timeline={timeline} />
       {timeline.segments.map((t) => {
         const Scene = scenes[t.segment.scene] as React.FC<SceneProps<typeof t.segment.scene>>;
         return (

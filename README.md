@@ -30,6 +30,7 @@
 其他工具：
 - `npm run sheet -- <slug>`：只生成关键帧总览图。横竖各 9 帧，叠加安全区，竖屏每格缩到 360px 宽，用来检查手机上字是否读得清、有没有越界。
 - `npm run loudness -- out/<slug>/<file>.mp4 [--fix]`：测量响度，`--fix` 时超出目标就标准化。
+- `npm run sfx [-- <name>]`：重新合成 `public/sfx/` 里的音效。
 - 安全区自查：`npm run dev` 打开 Studio，在右侧 Props 面板勾选 `showSafeZone`。竖屏避开顶部 15%、底部 20%、右侧 12%。
 
 ## 脚本格式（episodes/&lt;slug&gt;/script.json）
@@ -47,6 +48,25 @@
   ]
 }
 ```
+
+### 音效
+
+每段可以挂一串 `sfx`，时刻用三种写法之一：数字（本段第几秒）、旁白里的一个词、或者 `"#名字"`（镜头在 `shots.ts` 的 `marks` 里声明的动作时刻，比如 `#land` 是水珠落地）。
+跟着词或动作走，换了配音也不用改秒数；找不到对应的词或动作时渲染直接报错。
+
+```jsonc
+"sfx": [
+  { "src": "sfx/tap.wav", "at": "#land", "volume": 0.55 },                  // 动作那一帧
+  { "src": "sfx/zip.wav", "at": "door" },                                   // 说到 door 时
+  { "src": "sfx/whoosh.wav", "at": "#wall", "offset": -0.85 },              // 让声音的重心对上动作
+  { "src": "sfx/night.wav", "at": 0.2, "loop": true, "volume": 0.35,         // 环境声，可以跨段
+    "until": { "segment": "s07", "at": "can" }, "fadeIn": 1, "fadeOut": 1.5 }
+]
+```
+
+`public/sfx/` 里的声音全部由 `npm run sfx` 用代码合成（`scripts/sfx.ts`，固定种子，每次结果一样），不用第三方素材。
+现有：`morning` `night` `lab-hum`（可循环环境声）、`scan-in` `scan-out` `rewind` `whoosh` `wind` `zip` `tap` `plink-1..3` `bloop` `tick` `pop` `tension` `rustle` `breath` `chime`。
+需要新声音就在 `scripts/sfx.ts` 里加一个函数再重新生成。
 
 每个 segment 的时长 = 配音时长 + 0.3 秒开头留白 + 0.5 秒结尾停顿（可用 `padAfter` 调整）。
 没有配音时按每秒 2.5 个英文单词（约 150 词/分钟）估算。字幕按词断行，每行不超过 6 个词。
@@ -112,6 +132,7 @@ episodes/
 public/
   voiceover/<slug>/*.mp3       ← 自动生成的配音
   music/                       背景音乐
+  sfx/                         代码合成的音效（npm run sfx 生成）
   fonts/                       Inter 字体（OFL）
 CLAUDE.md                      系列设定（给 Claude Code）
 LICENSES.md                    第三方授权清单
@@ -126,7 +147,7 @@ src/
   components/                  背景、Logo、字幕等
   lib/                         脚本 schema、时间轴与字幕计算、动画工具
 scripts/
-  new-episode.ts  voiceover.ts  render.ts  sync-episodes.ts  loudness.ts  contact-sheet.ts
+  new-episode.ts  voiceover.ts  render.ts  sync-episodes.ts  loudness.ts  contact-sheet.ts  sfx.ts
 ```
 
 ## 小贴士

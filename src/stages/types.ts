@@ -29,6 +29,11 @@ export type Shot<S extends StageState> = {
   pose: (ctx: ShotContext) => S;
   /** 屏幕标题在本段进度的哪一刻入场，默认 0.08；写一个词就在旁白说到这个词时入场 */
   headingAt?: number | string;
+  /**
+   * 可选：这个镜头里的动作时刻（本段秒数），名字随便起。script.json 的音效用 "#名字" 对上，
+   * 这样声音落在动作发生的那一帧，改了镜头节奏也不用回去改秒数。拿到的 ctx 是本段开头那一刻。
+   */
+  marks?: (ctx: ShotContext) => Record<string, number>;
 };
 
 export type StageDef<S extends StageState> = {

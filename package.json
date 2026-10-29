@@ -12,7 +12,8 @@
     "render": "npm run sync && tsx scripts/render.ts",
     "typecheck": "tsc --noEmit",
     "sheet": "tsx scripts/contact-sheet.ts",
-    "loudness": "tsx scripts/loudness.ts"
+    "loudness": "tsx scripts/loudness.ts",
+    "sfx": "tsx scripts/sfx.ts"
   },
   "dependencies": {
     "@react-three/fiber": "9.8.2",
