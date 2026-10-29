@@ -118,13 +118,13 @@ const Labels: React.FC<{ labels: Label[]; state: TentState }> = ({ labels, state
           const roomL = p.x - Math.abs(dx) - safe.left;
           if (dx >= 0 && roomR < tw && roomL > roomR) dx = -Math.abs(dx);
           else if (dx < 0 && roomL < tw && roomR > roomL) dx = Math.abs(dx);
-          if (p.y + dy + fs * 0.4 > height - content.bottom + 60 * u) dy = -Math.abs(dy);
+          if (p.y + dy + fs * 0.4 > height - content.bottom) dy = -Math.abs(dy);
           else if (p.y + dy - fs < safe.top) dy = Math.abs(dy);
           const tx = p.x + dx * l.show;
           const ty = p.y + dy * l.show;
           const right = dx < 0;
           // 入场时字从圆点滑出来；圆点本身离字幕很近时，字也不能压到字幕上
-          const textY = Math.min(ty + 16 * u, height - content.bottom + 60 * u);
+          const textY = Math.min(ty + 16 * u, height - content.bottom);
           const textX = right
             ? Math.max(tx - 16 * u, safe.left + tw - 16 * u)
             : Math.min(tx + 16 * u, width - safe.right - tw + 16 * u);

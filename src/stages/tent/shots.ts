@@ -339,7 +339,7 @@ const fix: Shot<TentState> = {
     const labels: Label[] = [
       { id: "vents", text: "Open vents", at: ventAt(dip), show: showFor(ctx, at("vents") - 0.1, at("pitch")), dx: -110, dy: -120, vdx: -40, vdy: -220 },
       { id: "tight", text: "Tight fly", at: [0.3, H2 + ty, 0], show: showFor(ctx, at("tight") - 0.1, at("under")), dx: 90, dy: -110, vdx: 40, vdy: -200 },
-      { id: "high", text: "High, dry ground", at: [1.4, groundY(1.4, 1.6, dip, 0), 1.6], show: showFor(ctx, at("higher"), ctx.duration - 0.8), dx: 90, dy: -90, vdx: -30, vdy: 160 },
+      { id: "high", text: "High, dry ground", at: [1.25, groundY(1.25, 1.2, dip, 0), 1.2], show: showFor(ctx, at("higher"), ctx.duration - 0.8), dx: 90, dy: -90, vdx: -30, vdy: 160 },
       { id: "trees", text: "Under trees", at: [-0.4, 2.7, -1.3], show: showFor(ctx, at("trees") + 0.1, ctx.duration - 0.8), dx: 120, dy: -80, vdx: 60, vdy: -170 },
     ];
     return {
